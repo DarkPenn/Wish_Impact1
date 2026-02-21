@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:background="#1E1E2E">
+
+    <!-- Cột bên trái -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="10dp">
+
+        <Button
+            android:id="@+id/Banner1"
+            android:layout_width="160dp"
+            android:layout_height="100dp"
+            android:layout_margin="10dp"
+            android:text="@string/banner_1" />
+
+        <Button
+            android:id="@+id/Banner2"
+            android:layout_width="160dp"
+            android:layout_height="100dp"
+            android:layout_margin="10dp"
+            android:text="@string/banner_2" />
+
+    </LinearLayout>
+
+    <!-- Cột bên phải (Đối xứng) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="10dp">
+
+        <Button
+            android:id="@+id/Banner3"
+            android:layout_width="160dp"
+            android:layout_height="100dp"
+            android:layout_margin="10dp"
+            android:text="@string/banner_3" />
+
+        <Button
+            android:id="@+id/Banner4"
+            android:layout_width="160dp"
+            android:layout_height="100dp"
+            android:layout_margin="10dp"
+            android:text="@string/banner_4" />
+
+    </LinearLayout>
+
+</LinearLayout>
