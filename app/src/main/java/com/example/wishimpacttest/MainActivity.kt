@@ -71,7 +71,14 @@ class MainActivity : AppCompatActivity() {
         // Đây chính là dòng giúp app hiển thị đúng Banner
         imageView.setImageResource(currentBannerImage)
 
-        tvHistory = findViewById(R.id.tvHistory)
+        //Nút quay lại màn hình khi chọn banner
+        val btnBackToChoose: Button = findViewById(R.id.btnBackToChoose)
+        btnBackToChoose.setOnClickListener {
+            showChooseBanner()
+        }
+
+
+//        tvHistory = findViewById(R.id.tvHistory)
         btnWish1 = findViewById(R.id.btnWish1)
         btnWish10 = findViewById(R.id.btnWish10)
 
