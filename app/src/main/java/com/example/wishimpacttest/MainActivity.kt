@@ -117,9 +117,7 @@ class MainActivity : AppCompatActivity() {
             val item = StringBuilder()
             historyList.forEach {
                 item.append("[${it.rarity.stars}★] ${it.name}\n")
-                item.setTextColor(Color.parseColor(item.rarity.colorHex)) //Lấy mã màu đã định nghĩa ở phần Rarity để tô màu cho món đồ
-                item. = 16f
-                item.typeface = Typeface.DEFAULT_BOLD
+
             }
             tvContent.text = item.toString()
         }
