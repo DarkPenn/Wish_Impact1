@@ -28,9 +28,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvHistory: TextView
     private lateinit var btnWish1: Button
     private lateinit var btnWish10: Button
-    private lateinit var btnHistory: Button
-
-
 
     // 3. Database & Logic
     private val pool3 = listOf("Kiếm Cùi", "Sách Cũ", "Gậy Gỗ", "Cung Tập Sự") //khai báo danh sách vật phấm sẽ rơi ra trong 3*
@@ -40,20 +37,16 @@ class MainActivity : AppCompatActivity() {
     private var pity5 = 0 //pity luôn bắt đầu từ 0
     private var pity4 = 0 //pity luôn bắt đầu từ 0
     private var currentBannerImage: Int = R.drawable.banner1 //dòng dùng để lưu trữ ID của tấm hình banner được chọn
-    // Lưu lịch sử cho từng loại BANNER
-    private val bannerHistories = mutableMapOf<Int, MutableList<GachaItem>>()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         showChooseBanner() // Chạy hàm sử lý trang chọn banner khi start
     }
 
-    private fun showChooseBanner() {
-        setContentView(R.layout.choose_banner)
+    private fun showChooseBanner() {setContentView(R.layout.choose_banner)
 
         // Tạo danh sách các cặp (Nút bấm - Hình ảnh tương ứng)
-        val bannerButtons = mapOf(                   //mapof: giúp quản lí nút nào đi với hình nào
+        val bannerConfig = mapOf(                   //mapof: giúp quản lí nút nào đi với hình nào
             R.id.Banner1 to R.drawable.banner1,     //kết nối id banner với ảnh banner
             R.id.Banner2 to R.drawable.banner2,
             R.id.Banner3 to R.drawable.banner3,
@@ -61,12 +54,9 @@ class MainActivity : AppCompatActivity() {
         )
 
         // Duyệt qua từng cặp để thiết lập sự kiện
-        bannerButtons.forEach { (btnId, resId) ->
+        bannerConfig.forEach { (btnId, resId) ->
             findViewById<Button>(btnId).setOnClickListener {
                 currentBannerImage = resId // Dòng dùng để lưu lại hình ảnh được chọn
-                if(!bannerHistories.containsKey(currentBannerImage))
-                    bannerHistories[currentBannerImage] = mutableListOf()
-
                 setupMainActivity()        // Sau đó mới chuyển sang màn hình chính
             }
         }
@@ -81,49 +71,25 @@ class MainActivity : AppCompatActivity() {
         // Đây chính là dòng giúp app hiển thị đúng Banner
         imageView.setImageResource(currentBannerImage)
 
+        tvHistory = findViewById(R.id.tvHistory)
         btnWish1 = findViewById(R.id.btnWish1)
         btnWish10 = findViewById(R.id.btnWish10)
-        btnHistory = findViewById(R.id.btnHistory)
 
         // 5. Sự kiện bấm nút
         btnWish1.setOnClickListener {
             val item = pullOne()  //Gọi hàm logic để lấy ra 1 món đồ ngẫu nhiên
-            bannerHistories[currentBannerImage]?.add(0, item) // Thêm lên đầu danh sách lịch sử
             // listOf(item) là biến 1 món đồ đơn lẻ thành 1 danh sách để hàm hiển thị xử
             showResultInBannerLayout(listOf(item))
         }
 
         btnWish10.setOnClickListener {
             val items = List(10) { pullOne() }  //Gọi hàm logic để lấy ra 10 món đồ ngẫu nhiên
-            bannerHistories[currentBannerImage]?.addAll(0, items) // Thêm lên đầu danh sách lịch sử
             showResultInBannerLayout(items)  //Chuyển sang màn hình kết quả để hiển thị toàn bộ danh sách 10 món đồ
-        }
-
-        btnHistory.setOnClickListener {
-            showHistory()
         }
     }
 
-    private fun showHistory() {
-        setContentView(R.layout.banner_history)
-        val tvTitle: TextView = findViewById(R.id.tvHistoryTitle)
-        val tvContent: TextView = findViewById(R.id.tvHistoryContent)
-        val btnBack: Button = findViewById(R.id.btnBackFromHistory)
+    private fun RollHistory(item: GachaItem) {
 
-        val historyList = bannerHistories[currentBannerImage] ?: mutableListOf()
-        if(historyList.isEmpty()) {
-            tvContent.text = "Chưa có lịch sử quay"
-        } else {
-            val item = StringBuilder()
-            historyList.forEach {
-                item.append("[${it.rarity.stars}★] ${it.name}\n")
-
-            }
-            tvContent.text = item.toString()
-        }
-        btnBack.setOnClickListener {
-            setupMainActivity()
-        }
     }
 
     // Hàm quay 1 lần (có tính toán bảo hiểm)
