@@ -4,4 +4,6 @@
     <string name="banner_2">Banner 2</string>
     <string name="banner_3">Banner 3</string>
     <string name="banner_4">Banner 4</string>
+    <string name="lich_su_quay">History</string>
+    <string name="thong_bao">This is where the wish history for that session of the game. The history is not saved when you exit the game.</string>
 </resources>

@@ -5,10 +5,13 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlin.random.Random
 
 // 1. Định nghĩa dữ liệu
@@ -20,12 +23,21 @@ enum class Rarity(val stars: Int, val colorHex: String) {
 
 data class GachaItem(val name: String, val rarity: Rarity) //khởi tạo 1 loại lớp dùng để lưu trữ dữ liệu
 
+data class WishHistory(
+    val stt: Int,         // Số thứ tự
+    val name: String,     // Tên vật phẩm
+    val rarity: String,   // Độ hiếm
+    val time: String      // Thời gian quay
+)
 class MainActivity : AppCompatActivity() {
 
     // 2. Khai báo biến giao diện
     private lateinit var tvLabel: TextView  //lateinit var: dùng để khai báo biến nhưng chưa gán giá trị
     private lateinit var resultContainer: LinearLayout
     private lateinit var tvHistory: TextView
+
+    private lateinit var btnHistory: Button
+    private lateinit var imgbtnback : ImageButton
     private lateinit var btnWish1: Button
     private lateinit var btnWish10: Button
 
@@ -81,8 +93,13 @@ class MainActivity : AppCompatActivity() {
 //        tvHistory = findViewById(R.id.tvHistory)
         btnWish1 = findViewById(R.id.btnWish1)
         btnWish10 = findViewById(R.id.btnWish10)
+        btnHistory = findViewById(R.id.btnHistory)
 
         // 5. Sự kiện bấm nút
+        btnHistory.setOnClickListener {
+            val items = showHistory()
+        }
+
         btnWish1.setOnClickListener {
             val item = pullOne()  //Gọi hàm logic để lấy ra 1 món đồ ngẫu nhiên
             // listOf(item) là biến 1 món đồ đơn lẻ thành 1 danh sách để hàm hiển thị xử
@@ -93,10 +110,6 @@ class MainActivity : AppCompatActivity() {
             val items = List(10) { pullOne() }  //Gọi hàm logic để lấy ra 10 món đồ ngẫu nhiên
             showResultInBannerLayout(items)  //Chuyển sang màn hình kết quả để hiển thị toàn bộ danh sách 10 món đồ
         }
-    }
-
-    private fun RollHistory(item: GachaItem) {
-
     }
 
     // Hàm quay 1 lần (có tính toán bảo hiểm)
@@ -134,6 +147,24 @@ class MainActivity : AppCompatActivity() {
 
         // Hiển thị các vật phẩm quay được vào Horizontal View thông qua vòng lặp
         items.forEach { item ->
+            // Tăng STT (Số thứ tự)
+            HistoryManager.totalWishes++
+
+            // Lấy thời gian hiện tại chính xác lúc vật phẩm rơi ra
+            val currentTime = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+
+            // Định dạng lại chuỗi Độ hiếm (Ví dụ: "5 ★")
+            val rarityString = "${item.rarity.stars} ★"
+
+            // Gom cả 4 dữ liệu vào Object và lưu vào kho
+            val historyRecord = WishHistory(
+                stt = HistoryManager.totalWishes,  // Dữ liệu cột 1
+                name = item.name,                  // Dữ liệu cột 2
+                rarity = rarityString,             // Dữ liệu cột 3
+                time = currentTime                 // Dữ liệu cột 4
+            )
+            HistoryManager.historyList.add(historyRecord)
+
             val itemView = TextView(this)
             val stars = "★".repeat(item.rarity.stars) //Tạo hình ngôi sao tương ứng với độ hiếm
             itemView.text = "${item.name}\n$stars" //Hiển thị tên vật phẩm và hình ngôi sao
@@ -158,6 +189,80 @@ class MainActivity : AppCompatActivity() {
         btnBack.setOnClickListener {
             setupMainActivity()
         }
+    }
+
+    object HistoryManager {
+        // Danh sách này sẽ lưu toàn bộ lịch sử quay
+        var totalWishes = 0
+        val historyList = mutableListOf<WishHistory>()
+    }
+    private fun showHistory(){
+        setContentView(R.layout.reward_history)
+
+        tvHistory = findViewById(R.id.tvHistory)
+        imgbtnback = findViewById(R.id.imgbtnBack)
+
+        val allData = HistoryManager.historyList.reversed()
+
+        // Ánh xạ RecyclerView và Cài đặt Adapter
+        val rcvHistory: RecyclerView = findViewById(R.id.rcvHistory)
+        val historyAdapter = HistoryAdapter(emptyList()) // Ban đầu để rỗng, sẽ cập nhật qua hàm loadPage
+        rcvHistory.layoutManager = LinearLayoutManager(this)
+        rcvHistory.adapter = historyAdapter
+
+        // Xử lý Logic Phân trang (Pagination)
+        val btnPrevPage: Button = findViewById(R.id.btnDecrease)
+        val btnNextPage: Button = findViewById(R.id.btnIncrease)
+        val tvCurrentPage: TextView = findViewById(R.id.tvNumber)
+
+        var currentPage = 1
+        val itemsPerPage = 5 // Mỗi trang hiện 5 dòng
+
+        // Tính tổng số trang (Nếu chưa quay gì thì mặc định là 1)
+        val totalPages = if (allData.isNotEmpty()) {
+            Math.ceil(allData.size / itemsPerPage.toDouble()).toInt()
+        } else {
+            1
+        }
+
+        // Hàm nội bộ để cắt dữ liệu và hiển thị đúng trang
+        fun loadPage(page: Int) {
+            tvCurrentPage.text = page.toString()
+
+            if (allData.isEmpty()) return // Tránh lỗi nếu danh sách trống
+
+            // Tính toán vị trí bắt đầu và kết thúc của danh sách con
+            val startIndex = (page - 1) * itemsPerPage
+            val endIndex = minOf(startIndex + itemsPerPage, allData.size)
+
+            // Cắt lấy 5 vật phẩm của trang hiện tại và đẩy vào Adapter
+            val pageData = allData.subList(startIndex, endIndex)
+            historyAdapter.updateData(pageData)
+        }
+
+        // Load dữ liệu trang 1 ngay khi vừa mở màn hình
+        loadPage(currentPage)
+
+        // Xử lý khi bấm nút Trang tiếp theo (>)
+        btnNextPage.setOnClickListener {
+            if (currentPage < totalPages) {
+                currentPage++
+                loadPage(currentPage)
+            }
+        }
+
+        // Xử lý khi bấm nút Trang trước đó (<)
+        btnPrevPage.setOnClickListener {
+            if (currentPage > 1) {
+                currentPage--
+                loadPage(currentPage)
+            }
+        }
+
+        imgbtnback.setOnClickListener {
+            setupMainActivity()
+        }
+
     }
 
 }

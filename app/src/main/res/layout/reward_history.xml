@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFAFA"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@android:color/black"
+        android:paddingHorizontal="15dp">
+
+        <ImageButton
+            android:id="@+id/imgbtnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_menu_revert"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@android:color/black"
+             />
+
+        <TextView
+        android:id="@+id/tvHistory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/lich_su_quay"
+        android:textColor="#FFEBCD"
+        android:textSize="20sp"
+
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/tvDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:textStyle="bold"
+        android:textSize="17sp"
+        android:text="@string/thong_bao"
+        />
+
+    <LinearLayout
+        android:id="@+id/tableHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFE4B5"
+        android:padding="10dp"
+        android:orientation="horizontal"
+        >
+
+        <TextView android:text="STT" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:gravity="center"/>
+        <TextView android:text="Tên" android:layout_width="0dp" android:layout_weight="2" android:layout_height="wrap_content" android:gravity="center" />
+        <TextView android:text="Độ hiếm" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:gravity="center" />
+        <TextView android:text="Thời gian" android:layout_width="0dp" android:layout_weight="0.8" android:layout_height="wrap_content" android:gravity="center" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rcvHistory"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:id="@+id/layoutQuantity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnDecrease"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:backgroundTint="#F4A460"
+            android:text="&lt;"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvNumber"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="#8B8989"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="#CDC9C9"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnIncrease"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:backgroundTint="#F4A460"
+            android:text="&gt;"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</LinearLayout>
