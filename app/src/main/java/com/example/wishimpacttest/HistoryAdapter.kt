@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.RecyclerView
 class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+
+
         val tvSTT: TextView = view.findViewById(R.id.tvSTT)
         val tvName: TextView = view.findViewById(R.id.tvName)
         val tvRarity: TextView = view.findViewById(R.id.tvRarity)
@@ -16,7 +18,7 @@ class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        // Đã sửa lại thành item_history chuẩn xác
+        // Tạo ra một dòng mới cho bảng lịch sử dựa trên bố cục XML đã thiết kế
         val view = LayoutInflater.from(parent.context).inflate(R.layout.items_history, parent, false)
         return ViewHolder(view)
     }
@@ -30,6 +32,8 @@ class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter
 
         // Lấy số sao từ Rarity ghép với ký tự ★ để hiển thị chữ
         holder.tvRarity.text = "${item.rarity.stars} ★"
+
+
 
         // Lấy mã màu từ Rarity để tô màu cho chữ
         holder.tvRarity.setTextColor(android.graphics.Color.parseColor(item.rarity.colorHex))
