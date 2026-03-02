@@ -26,7 +26,7 @@ data class GachaItem(val name: String, val rarity: Rarity) //khởi tạo 1 lo�
 data class WishHistory(
     val stt: Int,         // Số thứ tự
     val name: String,     // Tên vật phẩm
-    val rarity: String,   // Độ hiếm
+    val rarity: Rarity,   // Độ hiếm
     val time: String      // Thời gian quay
 )
 class MainActivity : AppCompatActivity() {
@@ -160,7 +160,7 @@ class MainActivity : AppCompatActivity() {
             val historyRecord = WishHistory(
                 stt = HistoryManager.totalWishes,  // Dữ liệu cột 1
                 name = item.name,                  // Dữ liệu cột 2
-                rarity = rarityString,             // Dữ liệu cột 3
+                rarity = item.rarity,             // Dữ liệu cột 3
                 time = currentTime                 // Dữ liệu cột 4
             )
             HistoryManager.historyList.add(historyRecord)
@@ -262,7 +262,5 @@ class MainActivity : AppCompatActivity() {
         imgbtnback.setOnClickListener {
             setupMainActivity()
         }
-
     }
-
 }
