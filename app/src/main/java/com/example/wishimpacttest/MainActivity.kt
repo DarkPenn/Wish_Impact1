@@ -31,7 +31,7 @@ data class WishHistory(
 )
 class MainActivity : AppCompatActivity() {
 
-    // 2. Khai báo biến giao diện
+    // Khai báo biến giao diện
     private lateinit var tvLabel: TextView  //lateinit var: dùng để khai báo biến nhưng chưa gán giá trị
     private lateinit var resultContainer: LinearLayout
     private lateinit var tvHistory: TextView
@@ -205,10 +205,15 @@ class MainActivity : AppCompatActivity() {
         val allData = HistoryManager.historyList.reversed()
 
         // Ánh xạ RecyclerView và Cài đặt Adapter
-        val rcvHistory: RecyclerView = findViewById(R.id.rcvHistory)
+
+        val rcvHistory: RecyclerView = findViewById(R.id.rcvHistory)// Tìm RecyclerView trên giao diện XML để chuẩn bị hiển thị dữ liệu
+
         val historyAdapter = HistoryAdapter(emptyList()) // Ban đầu để rỗng, sẽ cập nhật qua hàm loadPage
-        rcvHistory.layoutManager = LinearLayoutManager(this)
+        rcvHistory.layoutManager = LinearLayoutManager(this)// Quy định cách sắp xếp các dòng xếp theo dạng danh sách cuộn dọc từ trên xuống
         rcvHistory.adapter = historyAdapter
+
+        //Tự động vẽ thêm các đường kẻ ngang ngăn cách giữa các dòng để tạo thành hình cái bảng
+        rcvHistory.addItemDecoration(androidx.recyclerview.widget.DividerItemDecoration(this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL))
 
         // Xử lý Logic Phân trang (Pagination)
         val btnPrevPage: Button = findViewById(R.id.btnDecrease)
