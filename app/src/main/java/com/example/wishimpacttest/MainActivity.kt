@@ -283,25 +283,31 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.inventory)
 
         imgbtnback = findViewById(R.id.imgbtnBack)
-        val rcvInventory: RecyclerView = findViewById(R.id.rcvInventory)
+        //Thành phần hiển thị danh sách chính
+        val rcvInventory: RecyclerView = findViewById(R.id.rcvInventory) // Danh sách hiển thị vật phẩm
+        val tvEmptyInventory: TextView = findViewById(R.id.tvEmptyInventory) // Thông báo khi kho đồ trống
 
-        val tvEmptyInventory: TextView = findViewById(R.id.tvEmptyInventory)
-        val panelDetail: LinearLayout = findViewById(R.id.panelDetail)
+        //Panel hiển thị chi tiết vật phẩm khi nhấn vào
+        val panelDetail: LinearLayout = findViewById(R.id.panelDetail) // Toàn bộ khung chi tiết
+        val layoutDetailHeader: LinearLayout = findViewById(R.id.layoutDetailHeader) // Phần tiêu đề của khung chi tiết
 
-        val layoutDetailHeader: LinearLayout = findViewById(R.id.layoutDetailHeader)
-        val tvDetailName: TextView = findViewById(R.id.tvDetailName)
-        val tvDetailStars: TextView = findViewById(R.id.tvDetailStars)
-        val tvDetailTime: TextView = findViewById(R.id.tvDetailTime)
-        val tvDetailSTT: TextView = findViewById(R.id.tvDetailSTT)
-        val tvDetailType: TextView = findViewById(R.id.tvDetailType)
+        //Các thông tin chi tiết
+        val tvDetailName: TextView = findViewById(R.id.tvDetailName)   // Tên vật phẩm
+        val tvDetailStars: TextView = findViewById(R.id.tvDetailStars) // Số sao/Độ hiếm
+        val tvDetailTime: TextView = findViewById(R.id.tvDetailTime)   // Thời gian nhận
+        val tvDetailSTT: TextView = findViewById(R.id.tvDetailSTT)     // Số thứ tự
+        val tvDetailType: TextView = findViewById(R.id.tvDetailType)   // Loại vật phẩm
 
-        // Tìm các nút Lọc bên trái
-        val btnFilterAll: TextView = findViewById(R.id.btnFilterAll)
-        val btnFilter5: TextView = findViewById(R.id.btnFilter5)
-        val btnFilter4: TextView = findViewById(R.id.btnFilter4)
-        val btnFilter3: TextView = findViewById(R.id.btnFilter3)
+        //Hệ thống các nút lọc bên trái
+        val btnFilterAll: TextView = findViewById(R.id.btnFilterAll) // Hiện tất cả
+        val btnFilter5: TextView = findViewById(R.id.btnFilter5)     // Lọc vật phẩm 5 sao
+        val btnFilter4: TextView = findViewById(R.id.btnFilter4)     // Lọc vật phẩm 4 sao
+        val btnFilter3: TextView = findViewById(R.id.btnFilter3)     // Lọc vật phẩm 3 sao
 
-        // Lấy TẤT CẢ dữ liệu ra và sắp xếp ưu tiên số sao cao trước
+
+        // Lấy dữ liệu gốc cho kho đồ:
+        // Sắp xếp giảm dần theo số sao (Đồ hiếm nhất lên đầu).
+        // Nếu cùng số sao, sắp xếp giảm dần theo STT (Cái nào mới nhận sẽ lên trước).
         val baseInventoryData = HistoryManager.historyList.sortedWith(
             compareByDescending<WishHistory> { it.rarity.stars }
                 .thenByDescending { it.stt }
@@ -309,46 +315,56 @@ class MainActivity : AppCompatActivity() {
 
         // HÀM PHỤ: Gom nhóm code cập nhật bảng chi tiết để tái sử dụng
         fun updateDetailPanel(item: WishHistory) {
-            tvDetailName.text = item.name
-            tvDetailType.text = "Weapon"
-            tvDetailStars.text = "★".repeat(item.rarity.stars)
-            tvDetailTime.text = item.time
-            tvDetailSTT.text = item.stt.toString()
+            tvDetailName.text = item.name // Hiển thị tên vật phẩm
+            tvDetailType.text = "Weapon"  // Loại vật phẩm (Lưu ý: Đang để mặc định là Weapon)
 
+            // Tạo chuỗi ký tự sao (★) dựa trên chỉ số stars (ví dụ: 5 sao -> ★★★★★)
+            tvDetailStars.text = "★".repeat(item.rarity.stars)
+
+            tvDetailTime.text = item.time       // Hiển thị thời gian nhận
+            tvDetailSTT.text = item.stt.toString() // Hiển thị số thứ tự
+
+            // Thiết lập màu sắc dựa trên độ hiếm
+            // Chuyển mã màu Hex từ dữ liệu thành kiểu màu của Android
             val rarityColor = android.graphics.Color.parseColor(item.rarity.colorHex)
+
+            // Cập nhật màu nền cho Header và màu chữ cho phần số sao để đồng bộ với độ hiếm
             layoutDetailHeader.setBackgroundColor(rarityColor)
             tvDetailStars.setTextColor(rarityColor)
         }
 
-        // HÀM LỌC: CHỈ HIỆN ĐỒ THEO SỐ SAO YÊU CẦU
+        // Cập nhật danh sách và bảng chi tiết dựa trên số sao.
         fun updateGrid(starFilter: Int) {
-            // Nếu chọn 0 (All) thì lấy hết, nếu chọn số sao thì lọc ra đồ có số sao tương ứng
+            // Lọc dữ liệu dựa trên tiêu chí người dùng chọn
             val filteredData = if (starFilter == 0) {
-                baseInventoryData
+                baseInventoryData //Lấy toàn bộ danh sách gốc
             } else {
-                baseInventoryData.filter { it.rarity.stars == starFilter }
+                baseInventoryData.filter { it.rarity.stars == starFilter } // Chỉ lấy item khớp số sao
             }
 
-            // Logic ẩn hiện
+            //Kiểm tra dữ liệu sau khi lọc để điều chỉnh giao diện
             if (filteredData.isEmpty()) {
+                // Trạng thái trống: ẩn danh sách và bảng chi tiết
                 tvEmptyInventory.visibility = android.view.View.VISIBLE
                 rcvInventory.visibility = android.view.View.GONE
                 panelDetail.visibility = android.view.View.INVISIBLE
             } else {
+                // Có dữ liệu: Hiển thị danh sách và bảng chi tiết
                 tvEmptyInventory.visibility = android.view.View.GONE
                 rcvInventory.visibility = android.view.View.VISIBLE
                 panelDetail.visibility = android.view.View.VISIBLE
 
+                // Thiết lập Adap cho RecyclerView
                 val adapter = InventoryAdapter(filteredData) { clickedItem ->
-                    // Khi người dùng tự tay bấm vào 1 ô vuông bất kỳ
+                    // Xử lý sự kiện khi người dùng click vào một item bất kỳ trong lưới
                     updateDetailPanel(clickedItem)
                 }
 
+                // Cấu hình lưới hiển thị 5 cột
                 rcvInventory.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this@MainActivity, 5)
                 rcvInventory.adapter = adapter
 
-                // ĐIỂM QUAN TRỌNG: Tự động load vật phẩm ĐẦU TIÊN lên bảng
-
+                // Tự động hiển thị chi tiết của vật phẩm đầu tiên trong danh sách lọc
                 val firstItem = filteredData[0]
                 updateDetailPanel(firstItem)
             }
