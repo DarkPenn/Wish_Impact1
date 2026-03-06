@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    android:layout_margin="4dp"
+    android:background="#D1C8B9">
+    <RelativeLayout
+    android:id="@+id/layoutBgRarity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="2dp"
+    android:background="#A6A6A6">
+        <ImageView
+    android:id="@+id/imgGridItem"
+    android:layout_width="60dp"
+    android:layout_height="60dp"
+    android:layout_centerInParent="true"
+    android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/tvGridItemName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/layoutBottomStrip"
+        android:gravity="center"
+        android:paddingHorizontal="4dp"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <LinearLayout
+        android:id="@+id/layoutBottomStrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#66000000"
+        android:gravity="center"
+        android:paddingVertical="2dp">
+
+        <TextView
+            android:id="@+id/tvGridStars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5 ★"
+            android:textColor="#FFD700"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</RelativeLayout>
+</FrameLayout>

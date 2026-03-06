@@ -38,8 +38,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnHistory: Button
     private lateinit var imgbtnback : ImageButton
+
+    private lateinit var imgbtnInventory : ImageButton
     private lateinit var btnWish1: Button
     private lateinit var btnWish10: Button
+
 
     // 3. Database & Logic
     private val pool3 = listOf("Kiếm Cùi", "Sách Cũ", "Gậy Gỗ", "Cung Tập Sự") //khai báo danh sách vật phấm sẽ rơi ra trong 3*
@@ -94,10 +97,17 @@ class MainActivity : AppCompatActivity() {
         btnWish1 = findViewById(R.id.btnWish1)
         btnWish10 = findViewById(R.id.btnWish10)
         btnHistory = findViewById(R.id.btnHistory)
+        imgbtnInventory = findViewById(R.id.imgbtn_Inventory)
+
+
 
         // 5. Sự kiện bấm nút
+        imgbtnInventory.setOnClickListener {
+            showInventory()
+        }
+
         btnHistory.setOnClickListener {
-            val items = showHistory()
+            showHistory()
         }
 
         btnWish1.setOnClickListener {
@@ -265,6 +275,95 @@ class MainActivity : AppCompatActivity() {
         }
 
         imgbtnback.setOnClickListener {
+            setupMainActivity()
+        }
+    }
+
+    private fun showInventory() {
+        setContentView(R.layout.inventory)
+
+        imgbtnback = findViewById(R.id.imgbtnBack)
+        val rcvInventory: RecyclerView = findViewById(R.id.rcvInventory)
+
+        val tvEmptyInventory: TextView = findViewById(R.id.tvEmptyInventory)
+        val panelDetail: LinearLayout = findViewById(R.id.panelDetail)
+
+        val layoutDetailHeader: LinearLayout = findViewById(R.id.layoutDetailHeader)
+        val tvDetailName: TextView = findViewById(R.id.tvDetailName)
+        val tvDetailStars: TextView = findViewById(R.id.tvDetailStars)
+        val tvDetailTime: TextView = findViewById(R.id.tvDetailTime)
+        val tvDetailSTT: TextView = findViewById(R.id.tvDetailSTT)
+        val tvDetailType: TextView = findViewById(R.id.tvDetailType)
+
+        // Tìm các nút Lọc bên trái
+        val btnFilterAll: TextView = findViewById(R.id.btnFilterAll)
+        val btnFilter5: TextView = findViewById(R.id.btnFilter5)
+        val btnFilter4: TextView = findViewById(R.id.btnFilter4)
+        val btnFilter3: TextView = findViewById(R.id.btnFilter3)
+
+        // Lấy TẤT CẢ dữ liệu ra và sắp xếp ưu tiên số sao cao trước
+        val baseInventoryData = HistoryManager.historyList.sortedWith(
+            compareByDescending<WishHistory> { it.rarity.stars }
+                .thenByDescending { it.stt }
+        )
+
+        // HÀM PHỤ: Gom nhóm code cập nhật bảng chi tiết để tái sử dụng
+        fun updateDetailPanel(item: WishHistory) {
+            tvDetailName.text = item.name
+            tvDetailType.text = "Weapon"
+            tvDetailStars.text = "★".repeat(item.rarity.stars)
+            tvDetailTime.text = item.time
+            tvDetailSTT.text = item.stt.toString()
+
+            val rarityColor = android.graphics.Color.parseColor(item.rarity.colorHex)
+            layoutDetailHeader.setBackgroundColor(rarityColor)
+            tvDetailStars.setTextColor(rarityColor)
+        }
+
+        // HÀM LỌC: CHỈ HIỆN ĐỒ THEO SỐ SAO YÊU CẦU
+        fun updateGrid(starFilter: Int) {
+            // Nếu chọn 0 (All) thì lấy hết, nếu chọn số sao thì lọc ra đồ có số sao tương ứng
+            val filteredData = if (starFilter == 0) {
+                baseInventoryData
+            } else {
+                baseInventoryData.filter { it.rarity.stars == starFilter }
+            }
+
+            // Logic ẩn hiện
+            if (filteredData.isEmpty()) {
+                tvEmptyInventory.visibility = android.view.View.VISIBLE
+                rcvInventory.visibility = android.view.View.GONE
+                panelDetail.visibility = android.view.View.INVISIBLE
+            } else {
+                tvEmptyInventory.visibility = android.view.View.GONE
+                rcvInventory.visibility = android.view.View.VISIBLE
+                panelDetail.visibility = android.view.View.VISIBLE
+
+                val adapter = InventoryAdapter(filteredData) { clickedItem ->
+                    // Khi người dùng tự tay bấm vào 1 ô vuông bất kỳ
+                    updateDetailPanel(clickedItem)
+                }
+
+                rcvInventory.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this@MainActivity, 5)
+                rcvInventory.adapter = adapter
+
+                // ĐIỂM QUAN TRỌNG: Tự động load vật phẩm ĐẦU TIÊN lên bảng
+
+                val firstItem = filteredData[0]
+                updateDetailPanel(firstItem)
+            }
+        }
+
+        // Khi vừa mở kho đồ lên, mặc định hiển thị "Tất cả" (0)
+        updateGrid(0)
+
+        // BẮT SỰ KIỆN KHI BẤM CÁC NÚT LỌC BÊN TRÁI
+        btnFilterAll.setOnClickListener { updateGrid(0) }
+        btnFilter5.setOnClickListener { updateGrid(5) }
+        btnFilter4.setOnClickListener { updateGrid(4) }
+        btnFilter3.setOnClickListener { updateGrid(3) }
+
+        imgbtnback .setOnClickListener {
             setupMainActivity()
         }
     }

@@ -79,6 +79,16 @@
                     android:id="@+id/btnHistory"
                     android:text="@string/lich_su_quay"
                     android:layout_marginEnd="20dp"/>
+
+                <ImageButton
+                    android:id="@+id/imgbtn_Inventory"
+                    android:layout_width="60dp"
+                    android:layout_height="50dp"
+                    android:background="#1E1E2E"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/img_inventory" />
+
+
             </LinearLayout>
 
             <LinearLayout
