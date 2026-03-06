@@ -6,8 +6,10 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
+// Lớp Adapter này dùng để hiển thị danh sách lịch sử quay gacha
 class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
 
+    // ViewHolder giúp giữ các View trong một dòng của danh sách
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
 
@@ -24,6 +26,7 @@ class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        // Đổ dữ liệu từ danh sách vào từng dòng tương ứng
         val item = list[position]
 
         holder.tvSTT.text = item.stt.toString()
@@ -41,6 +44,7 @@ class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter
 
     override fun getItemCount() = list.size
 
+    // Hàm cập nhật lại danh sách khi có dữ liệu mới (ví dụ khi chuyển trang)
     fun updateData(newList: List<WishHistory>) {
         list = newList
         notifyDataSetChanged()
