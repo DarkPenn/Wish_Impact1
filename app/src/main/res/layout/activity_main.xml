@@ -42,20 +42,49 @@
                 android:textSize="32sp"
                 android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/imgbtn_shop"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
-                android:text="shop"
-                android:background="#1E1E2E"
-                android:scaleType="fitCenter"
-                android:src="@drawable/img_shop"
+            <!-- Thêm phần hiển thị User và Tiền ở góc phải -->
+            <LinearLayout
+                android:id="@+id/userSectionMain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"/>
+                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
+                <!-- Icon Tiền tệ -->
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="4dp"/>
 
+                <!-- Số tiền -->
+                <TextView
+                    android:id="@+id/tvTotalWishes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#FFD700"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="15dp"/>
 
+                <TextView
+                    android:id="@+id/tvUserNameMain"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Customer"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="5dp"/>
 
+                <!-- Icon Customer -->
+                <ImageView
+                    android:id="@+id/imgUserIconMain"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_myplaces" />
+            </LinearLayout>
         </RelativeLayout>
 
         <TextView
@@ -81,44 +110,47 @@
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <LinearLayout
-                android:layout_width="350dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:gravity="left">
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/btnHistory"
-                    android:text="@string/lich_su_quay"
-                    android:layout_marginEnd="20dp"/>
-
-                <ImageButton
-                    android:id="@+id/imgbtn_Inventory"
-                    android:layout_width="60dp"
-                    android:layout_height="50dp"
-                    android:text="inventory"
-                    android:background="#1E1E2E"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/img_inventory" />
-
-
-            </LinearLayout>
+                android:id="@+id/btnHistory"
+                android:text="@string/lich_su_quay"
+                android:layout_weight="1"
+                android:layout_marginEnd="10dp"/>
+            <ImageButton
+                android:id="@+id/imgbtn_Inventory"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:text="inventory"
+                android:background="#1E1E2E"
+                android:scaleType="fitCenter"
+                android:src="@drawable/img_inventory" />
+            <ImageButton
+                android:id="@+id/imgbtn_Shop"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:text="shop"
+                android:background="#1E1E2E"
+                android:scaleType="fitCenter"
+                android:src="@drawable/img_shop"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"/>
 
             <LinearLayout
-                android:layout_width="350dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:gravity="right"
-                android:paddingRight="20dp">
+                android:layout_weight="2"
+                android:gravity="end">
 
                 <Button
                     android:id="@+id/btnWish1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="20dp"
+                    android:layout_marginEnd="10dp"
                     android:backgroundTint="#F48FB1"
                     android:text="Quay x1" />
 

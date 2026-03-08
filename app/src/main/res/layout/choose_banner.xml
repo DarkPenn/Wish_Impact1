@@ -1,55 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:gravity="center"
-    android:background="#1E1E2E">
+    android:background="#1E1E2E"
+    android:padding="10dp">
 
-    <!-- Cột bên trái -->
+    <!-- Khu vực hiển thị tên và icon User ở góc phải -->
+    <LinearLayout
+        android:id="@+id/userSection"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="5dp">
+
+        <TextView
+            android:id="@+id/tvUserNameHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Khách"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"/>
+
+        <ImageView
+            android:id="@+id/imgUserIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            android:contentDescription="User Icon" />
+    </LinearLayout>
+
+    <!-- Nội dung chính (Chọn banner) -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_margin="10dp">
+        android:layout_centerInParent="true"
+        android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/Banner1"
-            android:layout_width="160dp"
-            android:layout_height="100dp"
-            android:layout_margin="10dp"
-            android:text="@string/banner_1" />
+        <!-- Cột bên trái -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="10dp">
 
-        <Button
-            android:id="@+id/Banner2"
-            android:layout_width="160dp"
-            android:layout_height="100dp"
-            android:layout_margin="10dp"
-            android:text="@string/banner_2" />
+            <Button
+                android:id="@+id/Banner1"
+                android:layout_width="160dp"
+                android:layout_height="100dp"
+                android:layout_margin="10dp"
+                android:text="Banner 1" />
 
+            <Button
+                android:id="@+id/Banner2"
+                android:layout_width="160dp"
+                android:layout_height="100dp"
+                android:layout_margin="10dp"
+                android:text="Banner 2" />
+        </LinearLayout>
+
+        <!-- Cột bên phải -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="10dp">
+
+            <Button
+                android:id="@+id/Banner3"
+                android:layout_width="160dp"
+                android:layout_height="100dp"
+                android:layout_margin="10dp"
+                android:text="Banner 3" />
+
+            <Button
+                android:id="@+id/Banner4"
+                android:layout_width="160dp"
+                android:layout_height="100dp"
+                android:layout_margin="10dp"
+                android:text="Banner 4" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Cột bên phải (Đối xứng) -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_margin="10dp">
-
-        <Button
-            android:id="@+id/Banner3"
-            android:layout_width="160dp"
-            android:layout_height="100dp"
-            android:layout_margin="10dp"
-            android:text="@string/banner_3" />
-
-        <Button
-            android:id="@+id/Banner4"
-            android:layout_width="160dp"
-            android:layout_height="100dp"
-            android:layout_margin="10dp"
-            android:text="@string/banner_4" />
-
-    </LinearLayout>
-
-</LinearLayout>
+</RelativeLayout>
