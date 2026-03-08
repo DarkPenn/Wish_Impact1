@@ -38,7 +38,7 @@
                 android:textSize="32sp"
                 android:textStyle="bold" />
 
-            <!-- Thêm phần hiển thị User ở góc phải -->
+            <!-- Thêm phần hiển thị User và Tiền ở góc phải -->
             <LinearLayout
                 android:id="@+id/userSectionMain"
                 android:layout_width="wrap_content"
@@ -47,6 +47,24 @@
                 android:layout_centerVertical="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
+
+                <!-- Icon Tiền tệ -->
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_wish"
+                    android:layout_marginEnd="4dp"/>
+
+                <!-- Số tiền -->
+                <TextView
+                    android:id="@+id/tvTotalWishes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#FFD700"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="15dp"/>
 
                 <TextView
                     android:id="@+id/tvUserNameMain"
@@ -57,6 +75,7 @@
                     android:textSize="12sp"
                     android:layout_marginEnd="5dp"/>
 
+                <!-- Icon Customer -->
                 <ImageView
                     android:id="@+id/imgUserIconMain"
                     android:layout_width="24dp"
