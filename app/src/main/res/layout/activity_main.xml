@@ -15,6 +15,10 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!--    !!!Note của RelativeLayout(Bố cục tương đối)!!!
+            android:layout_centerVertical="true": Nếu "true", căn giữa thành phần hiển thị con này theo chiều dọc trong thành phần hiển thị cha.
+            android:layout_alignParentStart="true": Nếu "true", điều này sẽ làm cho cạnh bắt đầu của khung nhìn này trùng khớp với cạnh bắt đầu của khung nhìn cha.
+            android:layout_centerInParent="true": Nếu "true", căn giữa phần tử con này theo chiều ngang và chiều dọc so với phần tử cha.-->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -52,7 +56,6 @@
                 <ImageView
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:src="@drawable/ic_wish"
                     android:layout_marginEnd="4dp"/>
 
                 <!-- Số tiền -->
@@ -103,9 +106,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                tools:srcCompat="@drawable/banner1" />
+                tools:srcCompat="@drawable/banner1" /> <!--dùng để hiển thị đó là ảnh ảo và có thể bị thay thế-->
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -119,6 +121,24 @@
                 android:text="@string/lich_su_quay"
                 android:layout_weight="1"
                 android:layout_marginEnd="10dp"/>
+            <ImageButton
+                android:id="@+id/imgbtn_Inventory"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:text="inventory"
+                android:background="#1E1E2E"
+                android:scaleType="fitCenter"
+                android:src="@drawable/img_inventory" />
+            <ImageButton
+                android:id="@+id/imgbtn_Shop"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:text="shop"
+                android:background="#1E1E2E"
+                android:scaleType="fitCenter"
+                android:src="@drawable/img_shop"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"/>
 
             <LinearLayout
                 android:layout_width="wrap_content"
