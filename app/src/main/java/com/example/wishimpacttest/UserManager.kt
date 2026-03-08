@@ -11,6 +11,8 @@ object UserManager {
     private const val KEY_USERNAME = "username"
     private const val KEY_PASSWORD = "password"
     private const val KEY_IS_LOGGED_IN = "isLoggedIn"
+    private const val KEY_TOTAL_WISHES = "totalWishes"  //Lưu tổng số lần quay theo tài khoản
+    private const val Key_History = "history"   //Lưu lịch sử quay theo tài khoản
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -24,6 +26,9 @@ object UserManager {
         editor.putString(KEY_PASSWORD, pass) //Mật khẩu
         // Khi đăng ký thành công, tự động đánh dấu là đã đăng nhập luôn
         editor.putBoolean(KEY_IS_LOGGED_IN, true) //Tên hiển thị khi đăng nhập
+
+        // Lưu lại tổng số lần quay
+        editor.putInt(KEY_TOTAL_WISHES, 100) //Tặng free 100 Roll khi tạo acc
         editor.apply()
     }
 
@@ -61,5 +66,25 @@ object UserManager {
     
     fun logout(context: Context) {
         getPrefs(context).edit().putBoolean(KEY_IS_LOGGED_IN, false).apply()
+    }
+
+    //Các hàm về xử lý tiền tệ
+    //Hàm kiểm tra tiền tệ còn lại trong tài khoản
+    fun getWishes(context: Context): Int {
+        return getPrefs(context).getInt(KEY_TOTAL_WISHES,0)
+    }
+    //Hàm tăng tiền tệ(khi nạp,làm nv,...)
+    fun addWishes(context: Context, amount: Int) {
+        val currentWishes = getWishes(context)
+        getPrefs(context).edit().putInt(KEY_TOTAL_WISHES, currentWishes + amount).apply()
+    }
+    //Hàm giảm tiền tệ(khi quay)
+    fun removeWishes(context: Context, amount: Int): Boolean {
+        val currentWishes = getWishes(context)
+        if(currentWishes >= amount) {   //trừ tiền khi quay nếu đủ
+            getPrefs(context).edit().putInt(KEY_TOTAL_WISHES, currentWishes - amount).apply()
+            return true
+        }
+        return false    //Không đủ tiền
     }
 }

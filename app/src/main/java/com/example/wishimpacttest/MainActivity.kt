@@ -111,8 +111,16 @@ class MainActivity : AppCompatActivity() {
     private fun setupMainActivity() {
         setContentView(R.layout.activity_main)
 
+        //Hiển thị Tiền và tên Customer ở góc phải
+        if(UserManager.isLoggedIn(this)==false) {
+            findViewById<TextView>(R.id.tvTotalWishes).text = 0.toString()
+            findViewById<TextView>(R.id.tvUserNameMain).text = "Customer"
+        } else {
+            findViewById<TextView>(R.id.tvTotalWishes).text = UserManager.getWishes(this).toString()
+            findViewById<TextView>(R.id.tvUserNameMain).text = UserManager.getDisplayName(this)
+        }
+
         //Hiển thị nút icon và đăng xuất nếu đã đăng nhập ở trên góc bên phải sử dụng popup
-        findViewById<TextView>(R.id.tvUserNameMain).text = UserManager.getDisplayName(this)
         findViewById<ImageView>(R.id.imgUserIconMain).setOnClickListener { view ->
             if (UserManager.isLoggedIn(this)) {
                 val popup = PopupMenu(this, view)
@@ -159,21 +167,29 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnWish1.setOnClickListener {
-            val item = pullOne()  //Gọi hàm logic để lấy ra 1 món đồ ngẫu nhiên
-            // listOf(item) là biến 1 món đồ đơn lẻ thành 1 danh sách để hàm hiển thị xử
-            showResultInBannerLayout(listOf(item))
+            if(UserManager.getWishes(this) >= 0) {  //Kiểm tra đủ 1 Tiền tệ để quay 1 lần không
+                val item = pullOne()  //Gọi hàm logic để lấy ra 1 món đồ ngẫu nhiên
+                UserManager.removeWishes(this,1)    //Trừ 1 Tiền tệ sau khi quay 1 lần
+                // listOf(item) là biến 1 món đồ đơn lẻ thành 1 danh sách để hàm hiển thị xử
+                showResultInBannerLayout(listOf(item))
+            }  else{
+                Toast.makeText(this, "Bạn không đủ tiền để quay!", Toast.LENGTH_SHORT).show()
+            }
         }
 
         btnWish10.setOnClickListener {
-            val items = List(10) { pullOne() }  //Gọi hàm logic để lấy ra 10 món đồ ngẫu nhiên
-            showResultInBannerLayout(items)  //Chuyển sang màn hình kết quả để hiển thị toàn bộ danh sách 10 món đồ
+            if (UserManager.getWishes(this) >= 10) {    //Kiểm tra đủ 10 Tiền tệ để quay 10 lần không
+                val items = List(10) { pullOne() }  //Gọi hàm logic để lấy ra 10 món đồ ngẫu nhiên
+                UserManager.removeWishes(this,10)   //Trừ 10 Tiền tệ sau khi quay 10 lần
+                showResultInBannerLayout(items)  //Chuyển sang màn hình kết quả để hiển thị toàn bộ danh sách 10 món đồ
+            } else{
+                Toast.makeText(this, "Bạn không đủ tiền để quay!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     // Các hàm xử lý đăng nhập, đăng ký, profile
-
     //Trang đăng nhập
-
     private fun showLogin() {
         setContentView(R.layout.layout_login)
         val edtUser = findViewById<EditText>(R.id.etLoginUsername)
@@ -273,7 +289,7 @@ class MainActivity : AppCompatActivity() {
 
 
         // Logic 5 sao (0.001% hoặc pity 90)
-        if (pity5 >= 150 || rate <= 0.001) {
+        if (pity5 >= 90 || rate <= 0.001) {
             pity5 = 0; pity4 = 0
             return GachaItem(pool5.random(), Rarity.FIVE_STAR)
         }
