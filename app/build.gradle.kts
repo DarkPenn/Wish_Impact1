@@ -5,13 +5,13 @@ plugins {
 
 android {
     namespace = "com.example.wishimpacttest"
-    compileSdk {
-        version = release(36)
-    }
+    // Sửa lại cú pháp compileSdk
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.wishimpacttest"
         minSdk = 24
+        // Sửa lại targetSdk về bản ổn định
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -28,10 +28,13 @@ android {
             )
         }
     }
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // Cập nhật cách khai báo jvmTarget để hết cảnh báo (warning)
     kotlinOptions {
         jvmTarget = "11"
     }
