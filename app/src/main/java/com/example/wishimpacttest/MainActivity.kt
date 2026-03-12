@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
 
         // Duyệt qua từng cặp để thiết lập sự kiện
         bannerConfig.forEach { (btnId, resId) ->
-            findViewById<Button>(btnId).setOnClickListener {
+            findViewById<ImageButton>(btnId).setOnClickListener {
                 currentBannerImage = resId // Dòng dùng để lưu lại hình ảnh được chọn
                 setupMainActivity()        // Sau đó mới chuyển sang màn hình chính
             }
@@ -169,11 +169,10 @@ class MainActivity : AppCompatActivity() {
         imageView.setImageResource(currentBannerImage)
 
         //Nút quay lại màn hình khi chọn banner
-        val btnBackToChoose: Button = findViewById(R.id.btnBackToChoose)
+        val btnBackToChoose: ImageButton = findViewById(R.id.btnBackToChoose)
         btnBackToChoose.setOnClickListener {
             showChooseBanner()
         }
-
 
 //        tvHistory = findViewById(R.id.tvHistory)
         btnWish1 = findViewById(R.id.btnWish1)
