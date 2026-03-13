@@ -47,15 +47,19 @@
             android:orientation="vertical"
             android:layout_margin="10dp">
 
-            <Button
+            <ImageButton
                 android:id="@+id/Banner1"
+                android:src="@drawable/banner1"
+                android:scaleType="centerCrop"
                 android:layout_width="160dp"
                 android:layout_height="100dp"
                 android:layout_margin="10dp"
                 android:text="Banner 1" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/Banner2"
+                android:src="@drawable/banner2"
+                android:scaleType="centerCrop"
                 android:layout_width="160dp"
                 android:layout_height="100dp"
                 android:layout_margin="10dp"
@@ -69,15 +73,19 @@
             android:orientation="vertical"
             android:layout_margin="10dp">
 
-            <Button
+            <ImageButton
                 android:id="@+id/Banner3"
+                android:src="@drawable/banner3"
+                android:scaleType="centerCrop"
                 android:layout_width="160dp"
                 android:layout_height="100dp"
                 android:layout_margin="10dp"
                 android:text="Banner 3" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/Banner4"
+                android:src="@drawable/banner4"
+                android:scaleType="centerCrop"
                 android:layout_width="160dp"
                 android:layout_height="100dp"
                 android:layout_margin="10dp"
