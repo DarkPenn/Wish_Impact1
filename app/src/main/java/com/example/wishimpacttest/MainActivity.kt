@@ -912,11 +912,19 @@ class MainActivity : AppCompatActivity() {
             // Kiểm tra xem đã chọn món nào chưa
             val group = currentSelectedGroup ?: return@setOnClickListener
 
-            // 1. TÍNH TOÁN TỔNG TIỀN (Dùng giá tự định customPrice)
             val totalCost = group.sampleItem.customPrice * buyQuantity
 
             // 2. LẤY RA ĐÚNG SỐ LƯỢNG MÓN ĐỒ CẦN XỬ LÝ
             val itemsToBuy = group.rawItems.take(buyQuantity)
+            val currentMoney = UserManager.getWishes(this)
+
+            // Kiểm tra xem có đủ tiền không
+            if (currentMoney < totalCost) {
+                // Không đủ tiền -> Báo lỗi và dừng ngay lập tức (return)
+                Toast.makeText(this, "Không đủ tiền! Bạn cần $totalCost tiền.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
 
             // ==========================================
             // 3. XỬ LÝ LOGIC "MUA BÁN" (Sếp dùng Cách 1 hoặc Cách 2)
@@ -928,8 +936,7 @@ class MainActivity : AppCompatActivity() {
                 item.isSold = true           // Đồ đã bị bán đứt
                 item.isListedOnShop = false  // Gỡ xuống khỏi kệ
             }
-            UserManager.addWishes(this,totalCost)
-            // ==========================================
+            UserManager.removeWishes(this, totalCost)
             // 4. LƯU LẠI VÀ CẬP NHẬT GIAO DIỆN
             // ==========================================
 
