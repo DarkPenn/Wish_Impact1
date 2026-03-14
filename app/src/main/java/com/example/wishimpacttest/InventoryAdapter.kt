@@ -10,8 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 // Adapter này giờ nhận đầu vào là InventoryGroup (Thùng hàng)
 class InventoryAdapter(
-    private val list: List<InventoryGroup>,
-    private val onItemClick: (InventoryGroup) -> Unit
+    private val list: List<ItemsGroup>,
+    private val onItemClick: (ItemsGroup) -> Unit
 ) : RecyclerView.Adapter<InventoryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -31,9 +31,9 @@ class InventoryAdapter(
         val item = group.sampleItem
 
         holder.tvGridItemName.text = item.name
-        holder.tvGridStars.text = "${item.rarity.stars} ★"
+        holder.tvGridStars.text = "★".repeat(item.rarity.stars)
 
-        holder.tvItemQuantity.text = "x${group.totalCount}"
+        holder.tvItemQuantity.text = "${group.totalCount}"
         if (group.totalCount > 1) {
             holder.tvItemQuantity.visibility = View.VISIBLE
         } else {
@@ -41,12 +41,10 @@ class InventoryAdapter(
         }
 
         holder.layoutBgRarity.setBackgroundColor(Color.parseColor(item.rarity.colorHex))
-        holder.tvGridStars.setTextColor(Color.parseColor(item.rarity.colorHex))
 
         holder.itemView.setOnClickListener {
             onItemClick(group) // Bắn cái Thùng hàng ra ngoài khi click
         }
     }
-
     override fun getItemCount() = list.size
 }

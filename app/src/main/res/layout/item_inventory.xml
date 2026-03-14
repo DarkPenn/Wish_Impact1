@@ -28,36 +28,35 @@
             android:textColor="#FFFFFF"
             android:textSize="10sp" />
 
-    <LinearLayout
-        android:id="@+id/layoutBottomStrip"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="#66000000"
-        android:gravity="center"
-        android:paddingVertical="2dp">
-
-        <TextView
-            android:id="@+id/tvGridStars"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="5 ★"
-            android:textColor="#FFD700"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/tvItemQuantity"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:id="@+id/layoutBottomStrip"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:layout_margin="4dp"
-            android:background="#80000000"
-            android:paddingHorizontal="4dp"
-            android:text="x1"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:background="#99000000"
+            android:paddingVertical="2dp">
+
+            <TextView
+                android:id="@+id/tvGridStars"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_alignParentTop="true"
+                android:text="★"
+                android:textColor="#FFD700"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/tvItemQuantity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvGridStars"
+                android:layout_centerHorizontal="true"
+                android:text="1"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
 </RelativeLayout>
 </FrameLayout>
