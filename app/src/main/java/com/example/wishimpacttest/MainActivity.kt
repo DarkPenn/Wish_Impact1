@@ -20,6 +20,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.wishimpacttest.MainActivity.PriceManager.getBasePrice
 import kotlin.random.Random
 
 // 1. Định nghĩa dữ liệu
@@ -36,11 +37,13 @@ data class WishHistory(
     val name: String,     // Tên vật phẩm
     val rarity: Rarity,   // Độ hiếm
     val time: String,   // Thời gian quay
-    var customPrice: Int = 0 // có thể thay đổi được giá item
+    var customPrice: Int = 0, // có thể thay đổi được giá item
+    var isSold: Boolean = false,
+    var isListedOnShop: Boolean = false
 )
 
 // Tạo một class mới để chứa nhóm vật phẩm
-data class InventoryGroup(
+data class ItemsGroup(
     val sampleItem: WishHistory,        // Lấy 1 món làm đại diện lấy tên, sao, hình ảnh
     val totalCount: Int,                // Tổng số lượng
     val rawItems: List<WishHistory>     // Danh sách các món đồ thực sự bên trong
@@ -129,7 +132,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupMainActivity() {
         setContentView(R.layout.activity_main)
-
+        UserManager.openHistory(this)
         //Hiển thị Tiền và tên Customer ở góc phải
         if(UserManager.isLoggedIn(this)==false) {
             findViewById<TextView>(R.id.tvTotalWishes).text = 0.toString()
@@ -347,7 +350,7 @@ class MainActivity : AppCompatActivity() {
         // Hiển thị các vật phẩm quay được vào Horizontal View thông qua vòng lặp
         items.forEach { item ->
             // Tăng STT (Số thứ tự)
-            HistoryManager.totalWishes++
+            ItemsManager.STT++
 
             // Lấy thời gian hiện tại chính xác lúc vật phẩm rơi ra
             val currentTime = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
@@ -357,12 +360,12 @@ class MainActivity : AppCompatActivity() {
 
             // Gom cả 4 dữ liệu vào Object và lưu vào kho
             val historyRecord = WishHistory(
-                stt = HistoryManager.totalWishes,  // Dữ liệu cột 1
+                stt = ItemsManager.STT,  // Dữ liệu cột 1
                 name = item.name,                  // Dữ liệu cột 2
                 rarity = item.rarity,             // Dữ liệu cột 3
                 time = currentTime                 // Dữ liệu cột 4
             )
-            HistoryManager.historyList.add(historyRecord)
+            ItemsManager.historyList.add(historyRecord)
 
             val itemView = TextView(this)
             val stars = "★".repeat(item.rarity.stars) //Tạo hình ngôi sao tương ứng với độ hiếm
@@ -390,10 +393,52 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    object HistoryManager {
-        // Danh sách này sẽ lưu toàn bộ lịch sử quay
-        var totalWishes = 0
+    object ItemsManager {
+
+        // KHO TỔNG (NGUỒN DỮ LIỆU DUY NHẤT)
+
+        var STT = 0
         val historyList = mutableListOf<WishHistory>()
+        // 2. BỘ LỌC CHO TÚI ĐỒ (INVENTORY)
+
+        val totalInventoryItems: Int
+            get() = historyList.count { !it.isSold && !it.isListedOnShop }
+
+        val InventoryList: List<ItemsGroup>
+            get() = historyList
+                .filter { !it.isSold && !it.isListedOnShop }
+                .groupBy { it.name }
+                .map { (_, items) ->
+                    ItemsGroup(items.first(), items.size, items.toMutableList())
+                }
+        // 3. BỘ LỌC CHO CỬA HÀNG (SHOP)
+        val ShopList: List<ItemsGroup>
+            get() = historyList
+                .filter { it.isListedOnShop && !it.isSold }
+                .groupBy { "${it.name}_${it.customPrice}" }
+                .map { (_, items) ->
+                    ItemsGroup(items.first(), items.size, items.toMutableList())
+                }
+    }
+
+    object PriceManager {
+        val priceList = mutableListOf<ItemPrice>()
+
+        // 1. HÀM CHUYÊN LẤY GIÁ GỐC (Link trực tiếp tới Số Sao)
+        fun getBasePrice(stars: Int): Int {
+            return when (stars) {
+                5 -> 10
+                4 -> 3
+                3 -> 1
+                else -> 0
+            }
+        }
+        // 2. HÀM LẤY GIÁ THỰC TẾ (Check giá riêng trước, không có thì xài giá gốc)
+        fun getPrice(item: WishHistory): Int {
+            val foundItem = priceList.find { it.name == item.name }
+            // Gọi lại hàm getBasePrice ở trên cho gọn!
+            return foundItem?.sellPrice ?: getBasePrice(item.rarity.stars)
+        }
     }
     private fun showHistory(){
         setContentView(R.layout.reward_history)
@@ -401,7 +446,7 @@ class MainActivity : AppCompatActivity() {
         tvHistory = findViewById(R.id.tvHistory)
         imgbtnback = findViewById(R.id.imgbtnBack)
 
-        val allData = HistoryManager.historyList.reversed()
+        val allData = ItemsManager.historyList.reversed()
 
         // Ánh xạ RecyclerView và Cài đặt Adapter
 
@@ -468,43 +513,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    object InventoryManager {
-        // Tổng số lượng vật phẩm lẻ đang có trong kho
-        var totalitems = 0
 
-        // Danh sách đã được gom nhóm để hiển thị lên lưới (RecyclerView)
-        val inventoryList = mutableListOf<InventoryGroup>()
-
-        /**
-         * Hàm này sẽ đồng bộ dữ liệu từ kho gốc (HistoryManager) sang InventoryManager.
-         * Cứ mỗi lần bạn mở túi đồ, mua, hoặc bán, hãy gọi hàm này để dữ liệu được làm mới.
-         */
-        fun syncData() {
-            // 1. Xóa sạch danh sách gom nhóm cũ để tránh bị nhân đôi dữ liệu
-            inventoryList.clear()
-
-            // 2. Lấy danh sách gốc (chứa các món đồ lẻ tẻ)
-            // (Giả sử kho gốc của bạn tên là HistoryManager.historyList)
-            val rawList = HistoryManager.historyList
-
-            // 3. Tiến hành gom nhóm những món trùng tên lại với nhau
-            val groupedData = rawList
-                .groupBy { it.name } // Gom nhóm theo tên
-                .map { (itemName, itemsWithSameName) ->
-                    InventoryGroup(
-                        sampleItem = itemsWithSameName.first(), // Lấy món đầu tiên làm đại diện
-                        totalCount = itemsWithSameName.size,    // Đếm tổng số lượng món trùng tên
-                        rawItems = itemsWithSameName            // Lưu lại toàn bộ danh sách đồ lẻ đó
-                    )
-                }
-
-            // 4. Đẩy danh sách đã gom nhóm vào inventoryList
-            inventoryList.addAll(groupedData)
-
-            // 5. Cập nhật tổng số lượng vật phẩm (tổng các món đồ lẻ)
-            totalitems = rawList.size
-        }
-    }
     private fun showInventory() {
         setContentView(R.layout.inventory)
         imgbtnback = findViewById(R.id.imgbtnBack)
@@ -515,15 +524,12 @@ class MainActivity : AppCompatActivity() {
         val btnFilter3: TextView = findViewById(R.id.btnFilter3)
         val btnSortStarDesc: TextView = findViewById(R.id.btnSortStarDesc)
         val btnSortStarAsc: TextView = findViewById(R.id.btnSortStarAsc)
-        val btnSortPriceDesc: TextView = findViewById(R.id.btnSortPriceDesc)
-        val btnSortPriceAsc: TextView = findViewById(R.id.btnSortPriceAsc)
         val layoutFilterSort: LinearLayout = findViewById(R.id.layoutFilterSort)
 
 
         // Cột giữa (Lưới đồ)
 
         val tvTotalItems: TextView = findViewById(R.id.tvTotalItems)
-        val tvMyMoney: TextView = findViewById(R.id.tvMyMoney)
         val tvEmptyInventory: TextView = findViewById(R.id.tvEmptyInventory)
         val rcvInventory: RecyclerView = findViewById(R.id.rcvInventory)
 
@@ -544,22 +550,20 @@ class MainActivity : AppCompatActivity() {
 
         var currentFilterStar = 0
         var currentSortMode = "STAR_DESC" // Mặc định xếp sao từ cao xuống thấp
-        var currentSelectedGroup: InventoryGroup? = null
+        var currentSelectedGroup: ItemsGroup? = null
         var sellQuantity = 1
 
 
 
-
-
 // Kiểm tra toàn bộ Túi đồ của bạn có trống không (star)
-        if (HistoryManager.historyList.isEmpty()) {
+        if (ItemsManager.historyList.isEmpty()) {
             layoutFilterfollowstar.visibility = View.GONE
         } else {
             layoutFilterfollowstar.visibility = View.VISIBLE
         }
 
 // Kiểm tra toàn bộ Túi đồ của bạn có trống không (sort)
-        if (HistoryManager.historyList.isEmpty()) {
+        if (ItemsManager.historyList.isEmpty()) {
             layoutFilterSort.visibility = View.GONE
         } else {
             layoutFilterSort.visibility = View.VISIBLE
@@ -571,92 +575,84 @@ class MainActivity : AppCompatActivity() {
             tvCurrentQuantity.text = sellQuantity.toString()
 
             val singlePrice = PriceManager.getPrice(group.sampleItem) ?: 0
-            tvTotalEarn.text = "Thu về: +${singlePrice * sellQuantity} Bụi sao"
+            tvTotalEarn.text = "Thu về: +${singlePrice * sellQuantity} Tiền"
 
             // Khóa/mở nút cộng trừ
             btnMinus.isEnabled = sellQuantity > 1
             btnPlus.isEnabled = sellQuantity < group.totalCount
         }
 
-
         fun loadGroupedInventory() {
-            // Cập nhật ví tiền trên góc
-            tvMyMoney.text = "Ví: ${PriceManager.userMoney} Bụi sao"
+            // 1. LẤY DỮ LIỆU ĐÚNG 1 LẦN DUY NHẤT VÀ LƯU VÀO BIẾN TẠM (Tối ưu hiệu năng cực mạnh)
+            val baseInventory = ItemsManager.InventoryList
+            // 2. Chuyển sang biến có thể thay đổi để đem đi lọc
+            var processData = baseInventory.toList()
+            // 3. KIỂM TRA SỰ TỒN TẠI CỦA SAO (Lấy từ biến tạm baseInventory)
+            val has5Star = baseInventory.any { it.sampleItem.rarity.stars == 5 }
+            val has4Star = baseInventory.any { it.sampleItem.rarity.stars == 4 }
+            val has3Star = baseInventory.any { it.sampleItem.rarity.stars == 3 }
 
-            // 1. Bắt buộc: Gọi hàm này để nó tính toán và gom nhóm số lượng mới nhất
-            InventoryManager.syncData()
-
-// 2. Sửa dòng processData lại thành lấy từ InventoryManager
-            var processData = InventoryManager.inventoryList.toList()
-            // KIỂM TRA SỰ TỒN TẠI CỦA TỪNG LOẠI SAO TRONG KHO GỐC
-            val has5Star = HistoryManager.historyList.any { it.rarity.stars == 5 }
-            val has4Star = HistoryManager.historyList.any { it.rarity.stars == 4 }
-            val has3Star = HistoryManager.historyList.any { it.rarity.stars == 3 }
-
-            //  ẨN / HIỆN NÚT (Dùng GONE để các nút dưới tự động trượt lên lấp chỗ trống)
             btnFilter5.visibility = if (has5Star) View.VISIBLE else View.GONE
             btnFilter4.visibility = if (has4Star) View.VISIBLE else View.GONE
             btnFilter3.visibility = if (has3Star) View.VISIBLE else View.GONE
 
-            // LOGIC SỐNG CÒN: Nếu người dùng đang chọn lọc 4 sao, mà lỡ bán mất món 4 sao cuối cùng
-            // Nút 4 sao biến mất -> Phải tự động trả bộ lọc về "Tất cả" (0) để không bị kẹt màn hình trống.
+            // Reset bộ lọc nếu món cuối cùng của loại sao đó bị bán mất
             if (currentFilterStar == 5 && !has5Star) currentFilterStar = 0
             if (currentFilterStar == 4 && !has4Star) currentFilterStar = 0
             if (currentFilterStar == 3 && !has3Star) currentFilterStar = 0
 
-
-
-
+            // 4. LỌC VÀ SẮP XẾP
             if (currentFilterStar != 0) {
                 processData = processData.filter { it.sampleItem.rarity.stars == currentFilterStar }
             }
 
-            // SẮP XẾP
             processData = when (currentSortMode) {
                 "STAR_ASC" -> processData.sortedBy { it.sampleItem.rarity.stars }
                 "STAR_DESC" -> processData.sortedByDescending { it.sampleItem.rarity.stars }
-                "PRICE_ASC" -> processData.sortedBy { PriceManager.getPrice(it.sampleItem) ?: 0 }
-                "PRICE_DESC" -> processData.sortedByDescending { PriceManager.getPrice(it.sampleItem) ?: 0 }
                 else -> processData
             }
 
-            // KIỂM TRA RỖNG VÀ HIỂN THỊ
+            // 5. THIẾT LẬP LAYOUT MANAGER
+            if (rcvInventory.layoutManager == null) {
+                rcvInventory.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 5)
+            }
+
+            // 6. XỬ LÝ HIỂN THỊ (Empty State)
             if (processData.isEmpty()) {
                 tvEmptyInventory.visibility = View.VISIBLE
                 rcvInventory.visibility = View.GONE
-                panelDetail.visibility = View.GONE // Ẩn bảng để lưới dàn ra
+                panelDetail.visibility = View.GONE
             } else {
                 tvEmptyInventory.visibility = View.GONE
                 rcvInventory.visibility = View.VISIBLE
 
-                // Ép ẩn bảng chi tiết mỗi khi tải lại/đổi bộ lọc
                 panelDetail.visibility = View.GONE
                 currentSelectedGroup = null
 
-                val adapter = InventoryAdapter(InventoryManager.inventoryList) { clickedGroup ->
-                    // KHI CLICK VÀO 1 MÓN ĐỒ TRONG LƯỚI:
+                // 7. GÁN ADAPTER
+                val adapter = InventoryAdapter(processData) { clickedGroup ->
                     currentSelectedGroup = clickedGroup
                     sellQuantity = 1
-
-                    // 1. Hiện bảng chi tiết lên
                     panelDetail.visibility = View.VISIBLE
 
-                    // 2. Đổ thông tin món đồ vào bảng
                     tvSelectedName.text = clickedGroup.sampleItem.name
                     tvDetailStars.text = "★".repeat(clickedGroup.sampleItem.rarity.stars)
-                    tvDetailStars.setTextColor(android.graphics.Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
+                    tvDetailStars.setTextColor(Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
 
-                    val singlePrice = PriceManager.getPrice(clickedGroup.sampleItem) ?: 0
-                    tvDetailPrice.text = "Giá trị: $singlePrice Bụi sao"
+                    // Hiện giá gốc items
+                    // Truyền đúng số sao của món đồ vào để lấy giá niêm yết
+                    val originalPrice = getBasePrice(currentSelectedGroup!!.sampleItem.rarity.stars)
+                    // Hiển thị lên màn hình
+                    tvDetailPrice.text = "Giá trị gốc: $originalPrice Tiền"
 
-                    // 3. Cập nhật thanh số lượng
+
+
                     updateQuantityUI()
                 }
 
-                tvTotalItems.text = "Tổng số vật phẩm: ${InventoryManager.totalitems}"
-                rcvInventory.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this@MainActivity, 5)
                 rcvInventory.adapter = adapter
             }
+            tvTotalItems.text = "Tổng số vật phẩm: ${ItemsManager.totalInventoryItems}"
         }
 
         // Nút tắt bảng chi tiết (X)
@@ -674,10 +670,6 @@ class MainActivity : AppCompatActivity() {
         // Cụm nút Sắp xếp
         btnSortStarAsc.setOnClickListener { currentSortMode = "STAR_ASC"; loadGroupedInventory() }
         btnSortStarDesc.setOnClickListener { currentSortMode = "STAR_DESC"; loadGroupedInventory() }
-        btnSortPriceAsc.setOnClickListener { currentSortMode = "PRICE_ASC"; loadGroupedInventory() }
-        btnSortPriceDesc.setOnClickListener {
-            currentSortMode = "PRICE_DESC"; loadGroupedInventory()
-        }
 
         // Nút tăng/giảm số lượng bán
         btnPlus.setOnClickListener {
@@ -697,46 +689,63 @@ class MainActivity : AppCompatActivity() {
 
 
 
+
+
 // NÚT BÁN LẤY TIỀN LUÔN (Giá cố định của hệ thống)
         btnSell.setOnClickListener {
-            val group = currentSelectedGroup ?: return@setOnClickListener
-            val itemsToSell = group.rawItems.take(sellQuantity)
+            val selectedGroup = currentSelectedGroup ?: return@setOnClickListener
 
-            // Tính tiền theo giá gốc (PriceManager)
-            val singlePrice = PriceManager.getPrice(group.sampleItem) ?: 0
-            val totalEarned = singlePrice * sellQuantity
-            PriceManager.userMoney += totalEarned
 
-            HistoryManager.historyList.removeAll(itemsToSell) // Xóa khỏi kho
+            // 1. Tính tiền
+            val pricePerItem = PriceManager.getPrice(selectedGroup.sampleItem)
+            val totalEarned = pricePerItem * sellQuantity
 
-            Toast.makeText(this, "Đã bán thu về $totalEarned Bụi sao!", Toast.LENGTH_SHORT).show()
-            loadGroupedInventory()
+            // 2. Lấy đúng số lượng đồ mang đi bán
+            val itemsToSell = selectedGroup.rawItems.take(sellQuantity)
+
+            // 3. LOGIC CHUYỂN ĐỔI: Chỉ cần bật cờ "isSold"
+            itemsToSell.forEach { item ->
+                item.isSold = true // Đồ lập tức tàng hình khỏi cả Túi và Shop
+            }
+            // 4. Cộng tiền cho User
+            UserManager.addWishes(this, totalEarned)
+
+            // 5. LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
+            UserManager.saveHistory(this)
+            loadGroupedInventory() // Hàm vẽ lại lưới Túi đồ của sếp
+
+            Toast.makeText(this, "Đã bán $sellQuantity món, nhận $totalEarned Tiền!", Toast.LENGTH_SHORT).show()
+            panelDetail.visibility = View.GONE
         }
 
 // NÚT ĐƯA LÊN CHỢ (Giá do người chơi nhập)
         btnPushToShop.setOnClickListener {
-            val group = currentSelectedGroup ?: return@setOnClickListener
+            val selectedGroup = currentSelectedGroup ?: return@setOnClickListener
 
-            // Kiểm tra xem người chơi đã nhập giá chưa
+            // 1. Kiểm tra giá người chơi nhập
             val priceStr = edtCustomPrice.text.toString()
             if (priceStr.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập giá muốn bán trên Shop!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Vui lòng nhập giá muốn bán!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            val userCustomPrice = priceStr.toInt()
 
-            val userCustomPrice = priceStr.toInt() // Lấy giá người chơi nhập
-            val itemsToMove = group.rawItems.take(sellQuantity)
+            // 2. Lấy đúng số lượng đồ mang lên Shop
+            val itemsToPush = selectedGroup.rawItems.take(sellQuantity)
 
-            // GẮN GIÁ TÙY CHỈNH CHO TỪNG MÓN ĐỒ TRƯỚC KHI NÉM LÊN SHOP
-            itemsToMove.forEach { it.customPrice = userCustomPrice }
+            // 3. LOGIC CHUYỂN ĐỔI: Tắt cờ Túi, Bật cờ Shop, Dán giá
+            itemsToPush.forEach { item ->
+                item.isListedOnShop = true // Lập tức tàng hình khỏi Túi và hiện ra ở Shop
+                item.customPrice = userCustomPrice
+            }
 
-            HistoryManager.historyList.removeAll(itemsToMove) // Trừ ở kho mình
-            ShopManager.shopList.addAll(itemsToMove)          // Ném sang Shop
+            // 4. LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
+            UserManager.saveHistory(this)
+            loadGroupedInventory() // Hàm vẽ lại lưới Túi đồ của sếp
 
-            Toast.makeText(this, "Đã đưa lên Shop với giá $userCustomPrice/món!", Toast.LENGTH_SHORT).show()
-
-            edtCustomPrice.text.clear() // Xóa trắng ô nhập
-            loadGroupedInventory()
+            Toast.makeText(this, "Đã đưa $sellQuantity món lên Shop với giá $userCustomPrice!", Toast.LENGTH_SHORT).show()
+            edtCustomPrice.text.clear()
+            panelDetail.visibility = View.GONE
         }
         imgbtnback .setOnClickListener {
             setupMainActivity()
@@ -744,28 +753,8 @@ class MainActivity : AppCompatActivity() {
 
         loadGroupedInventory()
     }
-
-
-    // Kệ hàng của Shop
-    object ShopManager {
-        val shopList = mutableListOf<WishHistory>()
-    }
-    // Kho đồ của người mua (Sẽ nhận đồ khi họ chốt đơn) giả định
-    object OtherPlayerManager {
-        val otherinventoryList = mutableListOf<WishHistory>()
-    }
-
     //  Bảng giá và Ví tiền trung tâm
-    object PriceManager {
-        val priceList = mutableListOf<ItemPrice>()
-        var userMoney: Int = 0
 
-        // Hàm dò giá trả về Int? (Có thể null nếu bạn chưa thiết lập giá cho món đồ đó)
-        fun getPrice(item: WishHistory): Int? {
-            val foundItem = priceList.find { it.name == item.name }
-            return foundItem?.sellPrice
-        }
-    }
     private fun showShop() {
         setContentView(R.layout.shop)
         imgbtnback = findViewById(R.id.imgbtnBack)
@@ -778,8 +767,6 @@ class MainActivity : AppCompatActivity() {
         val btnSortStarAsc: TextView = findViewById(R.id.btnShopSortStarAsc)
         val btnSortPriceDesc: TextView = findViewById(R.id.btnShopSortPriceDesc)
         val btnSortPriceAsc: TextView = findViewById(R.id.btnShopSortPriceAsc)
-
-        val tvShopMyMoney: TextView = findViewById(R.id.tvShopMyMoney)
         val tvShopEmpty: TextView = findViewById(R.id.tvShopEmpty)
         val rcvShopItems: RecyclerView = findViewById(R.id.rcvShopItems)
 
@@ -794,18 +781,26 @@ class MainActivity : AppCompatActivity() {
         val tvTotalPrice: TextView = findViewById(R.id.tvTotalPrice)
         val btnConfirmBuy: Button = findViewById(R.id.btnConfirmBuy)
 
+        val btnBackInventory: Button = findViewById(R.id.btnBackInventory)
+
         //  BIẾN TRẠNG THÁI
         var currentFilterStar = 0
         var currentSortMode = "STAR_DESC"
-        var currentSelectedGroup: InventoryGroup? = null
+        var currentSelectedGroup: ItemsGroup? = null
         var buyQuantity = 1
 
+        //Hiển thị Tiền và tên Customer ở góc phải
+        if(UserManager.isLoggedIn(this)==false) {
+            findViewById<TextView>(R.id.tvTotalWishes).text = 0.toString()
+        } else {
+            findViewById<TextView>(R.id.tvTotalWishes).text = UserManager.getWishes(this).toString()
+        }
         //  HÀM CẬP NHẬT giao diện
         fun updateBuyUI() {
             val group = currentSelectedGroup ?: return
             tvBuyQuantity.text = buyQuantity.toString()
-            val unitPrice = PriceManager.getPrice(group.sampleItem) ?: 0
-            tvTotalPrice.text = "Tổng thanh toán: ${unitPrice * buyQuantity} Bụi sao"
+            val unitPrice = group.sampleItem.customPrice
+            tvTotalPrice.text = "Tổng thanh toán: ${unitPrice * buyQuantity} Tiền"
 
             btnBuyMinus.isEnabled = buyQuantity > 1
             btnBuyPlus.isEnabled = buyQuantity < group.totalCount
@@ -813,12 +808,11 @@ class MainActivity : AppCompatActivity() {
 
         // 4. HÀM TẢI LƯỚI SHOP
         fun loadShopData() {
-            tvShopMyMoney.text = "Ví: ${PriceManager.userMoney} Bụi sao"
-
                 // KIỂM TRA TRÊN KỆ SHOP CÓ SAO NÀO
-                val has5Star = ShopManager.shopList.any { it.rarity.stars == 5 }
-                val has4Star = ShopManager.shopList.any { it.rarity.stars == 4 }
-                val has3Star = ShopManager.shopList.any { it.rarity.stars == 3 }
+            // KIỂM TRA TRÊN KỆ SHOP CÓ SAO NÀO (Lấy từ hộp đồ đã gom nhóm)
+            val has5Star = ItemsManager.ShopList.any { it.sampleItem.rarity.stars == 5 }
+            val has4Star = ItemsManager.ShopList.any { it.sampleItem.rarity.stars == 4 }
+            val has3Star = ItemsManager.ShopList.any { it.sampleItem.rarity.stars == 3 }
 
                 //  ẨN / HIỆN NÚT LỌC SHOP
                 btnFilter5.visibility = if (has5Star) View.VISIBLE else View.GONE
@@ -830,20 +824,19 @@ class MainActivity : AppCompatActivity() {
                 if (currentFilterStar == 4 && !has4Star) currentFilterStar = 0
                 if (currentFilterStar == 3 && !has3Star) currentFilterStar = 0
 
-            var processData = ShopManager.shopList.toList() // Lấy từ kệ hàng
+            var processData = ItemsManager.ShopList.toList() // Lấy từ kệ hàng
 
-            if (currentFilterStar != 0) { processData = processData.filter { it.rarity.stars == currentFilterStar } }
+            if (currentFilterStar != 0) { processData = processData.filter { it.sampleItem.rarity.stars == currentFilterStar } }
 
-            var groupedList = processData
-                .groupBy { "${it.name}_${it.customPrice}" } // Nâng cấp: Gộp những món CÙNG TÊN và CÙNG MỨC GIÁ TỰ CHỌN
-                .map { (key, list) -> InventoryGroup(list.first(), list.size, list) }
+            // VÌ processData ĐÃ LÀ CÁC HỘP (InventoryGroup) ĐƯỢC GOM SẴN TỪ KHO,
+            // NÊN TA BỎ QUA BƯỚC GOM NHÓM VÀ ĐI THẲNG VÀO BƯỚC SẮP XẾP!
 
-            groupedList = when (currentSortMode) {
-                "STAR_ASC" -> groupedList.sortedBy { it.sampleItem.rarity.stars }
-                "STAR_DESC" -> groupedList.sortedByDescending { it.sampleItem.rarity.stars }
-                "PRICE_ASC" -> groupedList.sortedBy { it.sampleItem.customPrice }
-                "PRICE_DESC" -> groupedList.sortedByDescending { it.sampleItem.customPrice }
-                else -> groupedList
+            val groupedList = when (currentSortMode) {
+                "STAR_ASC" -> processData.sortedBy { it.sampleItem.rarity.stars }
+                "STAR_DESC" -> processData.sortedByDescending { it.sampleItem.rarity.stars }
+                "PRICE_ASC" -> processData.sortedBy { it.sampleItem.customPrice }
+                "PRICE_DESC" -> processData.sortedByDescending { it.sampleItem.customPrice }
+                else -> processData
             }
 
 
@@ -871,10 +864,10 @@ class MainActivity : AppCompatActivity() {
 
                     tvBuyName.text = clickedGroup.sampleItem.name
                     tvBuyStars.text = "★".repeat(clickedGroup.sampleItem.rarity.stars)
-                    tvBuyStars.setTextColor(android.graphics.Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
-                    tvUnitPrice.text = "Đơn giá: ${PriceManager.getPrice(clickedGroup.sampleItem) ?: 0} Bụi sao"
+                    tvBuyStars.setTextColor(Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
+                    tvUnitPrice.text = "Đơn giá: ${PriceManager.getPrice(clickedGroup.sampleItem) } tiền"
 
-                    tvUnitPrice.text = "Đơn giá: ${clickedGroup.sampleItem.customPrice} Bụi sao"
+                    tvUnitPrice.text = "Đơn giá: ${clickedGroup.sampleItem.customPrice} tiền"
                     updateBuyUI()
 
 
@@ -916,30 +909,62 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnConfirmBuy.setOnClickListener {
-            val group = currentSelectedGroup
-            if (group != null) {
-                val itemsToBuy = group.rawItems.take(buyQuantity)
+            // Kiểm tra xem đã chọn món nào chưa
+            val group = currentSelectedGroup ?: return@setOnClickListener
 
-                // Trừ tiền người mua (Nếu làm hệ thống tiền thật thì mở ra)
-                /*
-                val totalPrice = (PriceManager.getPrice(group.sampleItem) ?: 0) * buyQuantity
-                if (PriceManager.userMoney < totalPrice) {
-                    Toast.makeText(this, "Không đủ Bụi sao!", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                PriceManager.userMoney -= totalPrice
-                */
+            // 1. TÍNH TOÁN TỔNG TIỀN (Dùng giá tự định customPrice)
+            val totalCost = group.sampleItem.customPrice * buyQuantity
 
-                // Chuyển đồ từ Shop -> Túi người khác
-                ShopManager.shopList.removeAll(itemsToBuy)
-                OtherPlayerManager.otherinventoryList.addAll(itemsToBuy)
+            // 2. LẤY RA ĐÚNG SỐ LƯỢNG MÓN ĐỒ CẦN XỬ LÝ
+            val itemsToBuy = group.rawItems.take(buyQuantity)
 
-                Toast.makeText(this, "Đã chốt đơn $buyQuantity ${group.sampleItem.name}!", Toast.LENGTH_SHORT).show()
+            // ==========================================
+            // 3. XỬ LÝ LOGIC "MUA BÁN" (Sếp dùng Cách 1 hoặc Cách 2)
+            // ==========================================
 
-                // Tải lại Shop (Tự động giấu bảng đi và dàn lưới ra)
-                loadShopData()
+            // ▶ CÁCH 1: NGƯỜI KHÁC MUA MẤT ĐỒ CỦA SẾP
+            // Đồ sẽ biến mất khỏi Shop,NHẬN được tiền
+            itemsToBuy.forEach { item ->
+                item.isSold = true           // Đồ đã bị bán đứt
+                item.isListedOnShop = false  // Gỡ xuống khỏi kệ
             }
+            UserManager.addWishes(this,totalCost)
+            // ==========================================
+            // 4. LƯU LẠI VÀ CẬP NHẬT GIAO DIỆN
+            // ==========================================
+
+            // Gọi cái "két sắt" ra để lưu trạng thái mới (Sếp gọi đúng tên hàm sếp đang dùng nhé)
+            UserManager.saveHistory(this)
+
+            // Báo tin vui
+            Toast.makeText(this, "Giao dịch thành công $buyQuantity ${group.sampleItem.name}!", Toast.LENGTH_SHORT).show()
+
+            // Load lại màn hình Shop (Hệ thống sẽ tự quét lại Kho, thấy món nào isListedOnShop = false là tự cho tàng hình khỏi kệ)
+            loadShopData()
         }
+        btnBackInventory.setOnClickListener {
+            // 1. Lấy cái hộp đồ mà người chơi đang bấm chọn trên màn hình
+            val group = currentSelectedGroup ?: return@setOnClickListener
+
+            // 2. Lấy đúng số lượng đồ muốn rút về (Dùng chung biến buyQuantity cho tiện)
+            val itemsToWithdraw = group.rawItems.take(buyQuantity)
+
+            // 3. LOGIC LÕI: Tắt cờ Shop.
+            // (Vì isSold vẫn là false, nên tắt cờ Shop xong kính lúp Túi Đồ sẽ tự động nhìn thấy nó lại)
+            itemsToWithdraw.forEach { item ->
+                item.isListedOnShop = false
+            }
+
+            // 4. LƯU LẠI VÀO KÉT SẮT (Bắt buộc để chống mất dữ liệu)
+            UserManager.saveHistory(this) // Nếu sếp để hàm save trong UserManager thì gọi UserManager.saveHistory(this)
+
+            // 5. Báo tin vui
+            Toast.makeText(this, "Đã rút $buyQuantity ${group.sampleItem.name} về túi!", Toast.LENGTH_SHORT).show()
+
+            // 6. Tải lại kệ Shop (Hàm loadShopData của sếp đã có sẵn logic ép ẩn bảng và vẽ lại lưới rồi)
+            loadShopData()
+        }
+
         // Chạy lần đầu
         loadShopData()
 
@@ -977,7 +1002,7 @@ class HistoryAdapter(private var list: List<WishHistory>) : RecyclerView.Adapter
         holder.tvSTT.text = item.stt.toString()
         holder.tvName.text = item.name
         holder.tvTime.text = item.time
-        holder.tvRarity.text = "${item.rarity.stars} ★"
+        holder.tvRarity.text = "★".repeat(item.rarity.stars)
         // tô màu cho dòng chữ hiển thị số sao đó.
         holder.tvRarity.setTextColor(Color.parseColor(item.rarity.colorHex))
     }

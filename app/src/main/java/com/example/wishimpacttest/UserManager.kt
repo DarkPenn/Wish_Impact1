@@ -2,6 +2,8 @@ package com.example.wishimpacttest
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.json.JSONArray
+import org.json.JSONObject
 
 // Object này giúp chúng ta lưu dữ liệu người dùng vào máy (SharedPreferences)
 // để khi tắt app mở lại vẫn còn tài khoản.
@@ -12,7 +14,7 @@ object UserManager {
     private const val KEY_PASSWORD = "password"
     private const val KEY_IS_LOGGED_IN = "isLoggedIn"
     private const val KEY_TOTAL_WISHES = "totalWishes"  //Lưu tổng số lần quay theo tài khoản
-    private const val Key_History = "history"   //Lưu lịch sử quay theo tài khoản
+    private const val KEY_HISTORY = "history"   //Lưu lịch sử quay theo tài khoản
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -86,5 +88,83 @@ object UserManager {
             return true
         }
         return false    //Không đủ tiền
+    }
+
+    // HÀM LƯU DỮ LIỆU VÀO ĐIỆN THOẠI
+    fun saveHistory(context: Context) {
+        // 1. Mở "két sắt"
+        val editor = getPrefs(context).edit()
+        val jsonArray = JSONArray()
+
+        // 2. CHẠY SANG HISTORY MANAGER ĐỂ LẤY DANH SÁCH ĐỒ
+        for (item in MainActivity.ItemsManager.historyList) {
+            val jsonObject = JSONObject()
+
+            // Đóng gói từng thuộc tính của món đồ
+            jsonObject.put("name", item.name)
+            jsonObject.put("star", item.rarity.stars)
+            jsonObject.put("time", item.time)
+            jsonObject.put("customPrice", item.customPrice)
+
+            // 👇 DÒNG SINH TỬ SẾP QUÊN: LƯU TRẠNG THÁI VÀO JSON 👇
+            jsonObject.put("isListedOnShop", item.isListedOnShop)
+            jsonObject.put("isSold", item.isSold)
+
+            // Bỏ vào mảng
+            jsonArray.put(jsonObject)
+        }
+
+        // 3. Lưu mảng danh sách đồ thành chuỗi JSON
+        val historyString = jsonArray.toString()
+        editor.putString(KEY_HISTORY, historyString)
+
+        // 4. Chốt lệnh lưu
+        editor.apply()
+    }
+
+    fun openHistory(context: Context) {
+        val prefs = getPrefs(context)
+
+        // 1. Dọn sạch kho cũ
+        MainActivity.ItemsManager.historyList.clear()
+
+        // 2. Lấy chuỗi JSON từ "két sắt" ra
+        val historyString = prefs.getString(KEY_HISTORY, "[]")
+
+        try {
+            val jsonArray = JSONArray(historyString)
+
+            // Vòng lặp bóc tách từng gói đồ
+            for (i in 0 until jsonArray.length()) {
+                val jsonObject = jsonArray.getJSONObject(i)
+
+                val itemName = jsonObject.getString("name")
+                val itemStar = jsonObject.getInt("star")
+                val itemTime = jsonObject.getString("time")
+                val itemPrice = jsonObject.getInt("customPrice")
+
+                // 👇 DÒNG SINH TỬ SẾP QUÊN: ĐỌC TRẠNG THÁI TỪ JSON RA 👇
+                // (Dùng optBoolean để nếu file cũ không có thì mặc định là false, không bị crash app)
+                val isListed = jsonObject.optBoolean("isListedOnShop", false)
+                val isSold = jsonObject.optBoolean("isSold", false)
+
+                // 3. Lắp ráp lại thành món đồ hoàn chỉnh
+                val restoredItem = WishHistory(
+                    stt = i + 1,
+                    name = itemName,
+                    rarity = Rarity.entries.first { it.stars == itemStar },
+                    time = itemTime,
+                    customPrice = itemPrice,
+                    // 👇 GẮN LẠI TRẠNG THÁI CHO MÓN ĐỒ 👇
+                    isListedOnShop = isListed,
+                    isSold = isSold
+                )
+
+                // 4. Nhét đồ ngược trở lại KHO
+                MainActivity.ItemsManager.historyList.add(restoredItem)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

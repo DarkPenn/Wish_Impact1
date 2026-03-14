@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#2B3344"
+    android:background="#212836"
     android:orientation="horizontal">
 
     <ScrollView
@@ -153,20 +153,34 @@
                 android:textColor="#FFFFFF"
                 android:textSize="22sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvShopMyMoney"
+            <!-- Thêm phần hiển thị User và Tiền ở góc phải -->
+            <LinearLayout
+                android:id="@+id/userSectionMain"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="#40000000"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="6dp"
-                android:text="Ví: 0 Bụi sao"
-                android:textColor="#27A054"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Icon Tiền tệ -->
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="4dp"/>
+
+                <!-- Số tiền -->
+                <TextView
+                    android:id="@+id/tvTotalWishes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#FFD700"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="15dp"/>
+
+            </LinearLayout>
         </RelativeLayout>
 
         <FrameLayout
@@ -194,14 +208,14 @@
         android:id="@+id/panelBuyDetail"
         android:layout_width="320dp"
         android:layout_height="match_parent"
-        android:background="#ECE5D9"
+        android:background="#212836"
         android:orientation="vertical"
         android:visibility="gone">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#D1C6AF"
+            android:background="#212836"
             android:padding="12dp">
 
             <TextView
@@ -209,7 +223,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:text="THÔNG TIN MUA HÀNG"
-                android:textColor="#5A4F3D"
+                android:textColor="#FFFFFF"
                 android:textStyle="bold" />
 
             <ImageButton
@@ -233,7 +247,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:textColor="#333"
+                android:textColor="#FFFFFF"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
@@ -251,7 +265,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:gravity="center"
-                android:textColor="#8B7B66"
+                android:textColor="#A0A8B8"
                 android:textSize="16sp" />
 
             <View
@@ -265,7 +279,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="Chọn số lượng mua:"
-                android:textColor="#333"
+                android:textColor="#A0A8B8"
                 android:textStyle="bold" />
 
             <LinearLayout
@@ -279,11 +293,14 @@
                     android:id="@+id/btnBuyMinus"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:backgroundTint="#8B7B66"
+                    android:backgroundTint="#4A5468"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
                     android:text="-"
                     android:textColor="#FFFFFF"
                     android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"  />
 
                 <TextView
                     android:id="@+id/tvBuyQuantity"
@@ -291,7 +308,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="1"
-                    android:textColor="#333"
+                    android:textColor="#FFFFFF"
                     android:textSize="26sp"
                     android:textStyle="bold" />
 
@@ -299,11 +316,14 @@
                     android:id="@+id/btnBuyPlus"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:backgroundTint="#8B7B66"
+                    android:backgroundTint="#4A5468"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
                     android:text="+"
                     android:textColor="#FFFFFF"
                     android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"/>
             </LinearLayout>
 
             <TextView
@@ -312,7 +332,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="Tổng tiền: 0"
-                android:textColor="#D32F2F"
+                android:textColor="#27A054"
                 android:textSize="18sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -322,15 +342,37 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <Button
-            android:id="@+id/btnConfirmBuy"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_margin="16dp"
-            android:backgroundTint="#27A054"
-            android:text="MUA NGAY (BUY)"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="12dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnBackInventory"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_marginEnd="10dp"
+                android:backgroundTint="#E53935"
+                android:text="Rút hàng"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnConfirmBuy"
+                android:layout_width="wrap_content"
+                android:layout_height="60dp"
+                android:layout_marginStart="10dp"
+                android:backgroundTint="#27A054"
+                android:text="Mua ngay"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+
     </LinearLayout>
 </LinearLayout>
