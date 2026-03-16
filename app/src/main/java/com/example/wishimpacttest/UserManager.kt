@@ -129,26 +129,32 @@ object UserManager {
     fun loadItems(context: Context) {
         val prefs = getPrefs(context)
 
+        // dọn sạch kho hiện tại tránh tình trạng người chơi ấn Load đồ trong túi lại bị nhân đôi lên.
         MainActivity.ItemsManager.historyList.clear()
 
+        // đọc dữ liệu từ kho nếu rỗng thì tự động trả về mảng rỗng
         val historyString = prefs.getString(KEY_HISTORY, "[]")
 
         try {
+            // biến cái chuỗi chữ dài ngoằng đó thành mảng
             val jsonArray = JSONArray(historyString)
 
+            // Khui từng cái trong mảng ra
             for (i in 0 until jsonArray.length()) {
                 val jsonObject = jsonArray.getJSONObject(i)
 
-                val itemName = jsonObject.getString("name")
-                val itemStar = jsonObject.getInt("star")
-                val itemTime = jsonObject.getString("time")
-                val itemPrice = jsonObject.getInt("customPrice")
+                // đọc các thông số cơ bản
+                val itemName = jsonObject.getString("name")        // Tên món đồ
+                val itemStar = jsonObject.getInt("star")           // Số sao
+                val itemTime = jsonObject.getString("time")        // Thời gian nhận
+                val itemPrice = jsonObject.getInt("customPrice")   // Giá người chơi đặt
 
                 val isListed = jsonObject.optBoolean("isListedOnShop", false)
                 val isSold = jsonObject.optBoolean("isSold", false)
 
+
                 val restoredItem = WishHistory(
-                    stt = i + 1,
+                    stt = i + 1, // đánh lại stt
                     name = itemName,
                     rarity = Rarity.entries.first { it.stars == itemStar },
                     time = itemTime,
@@ -157,10 +163,12 @@ object UserManager {
                     isSold = isSold
                 )
 
+                // Xếp món đồ vào lại Kho
                 MainActivity.ItemsManager.historyList.add(restoredItem)
             }
         } catch (e: Exception) {
+            // Nếu file save bị hỏng
+            // App sẽ không bị văng mà chỉ in lỗi ra màn hình Log.
             e.printStackTrace()
         }
-    }
-}
+    }}
