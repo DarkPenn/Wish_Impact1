@@ -38,8 +38,8 @@ data class WishHistory(
     val rarity: Rarity,   // Độ hiếm
     val time: String,   // Thời gian quay
     var customPrice: Int = 0, // có thể thay đổi được giá item
-    var isSold: Boolean = false,
-    var isListedOnShop: Boolean = false
+    var isSold: Boolean = false,// nếu true thì item đã bán ra (getbasePrice)
+    var isListedOnShop: Boolean = false// nếu true thì item đã trên kệ của shop (getPrice)
 )
 
 // Tạo một class mới để chứa nhóm vật phẩm
@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupMainActivity() {
         setContentView(R.layout.activity_main)
-        UserManager.openHistory(this)
+        UserManager.loadItems(this)
         //Hiển thị Tiền và tên Customer ở góc phải
         if(UserManager.isLoggedIn(this)==false) {
             findViewById<TextView>(R.id.tvTotalWishes).text = 0.toString()
@@ -392,26 +392,23 @@ class MainActivity : AppCompatActivity() {
             setupMainActivity()
         }
     }
-
+    // nơi quản lý toàn bộ vật phẩm trong game
     object ItemsManager {
+        var STT = 0 // Biến đếm số thứ tự đếm lượt quay Gacha
+        // Không bao giờ được dùng lệnh .remove() xóa đồ khỏi đây để tránh lỗi mất dữ liệu lịch sử.
+        val historyList = mutableListOf<WishHistory>() // mọi món đồ người chơi từng sở hữu.
 
-        // KHO TỔNG (NGUỒN DỮ LIỆU DUY NHẤT)
-
-        var STT = 0
-        val historyList = mutableListOf<WishHistory>()
-        // 2. BỘ LỌC CHO TÚI ĐỒ (INVENTORY)
-
-        val totalInventoryItems: Int
+        val totalInventoryItems: Int // Đếm tổng số lượng đồ đang có thực sự trong Túi (Chưa bán hoặc Chưa đem lên Shop)
             get() = historyList.count { !it.isSold && !it.isListedOnShop }
 
-        val InventoryList: List<ItemsGroup>
+        val InventoryList: List<ItemsGroup> //Tự động gom nhóm đồ vật để hiển thị lên màn hình Inventory
             get() = historyList
-                .filter { !it.isSold && !it.isListedOnShop }
-                .groupBy { it.name }
+                .filter { !it.isSold && !it.isListedOnShop } // Chỉ lấy đồ đang rảnh rỗi trong túi
+                .groupBy { it.name } // Gom những món cùng tên lại với nhau
                 .map { (_, items) ->
+                    // Đóng gói vào ItemsGroup để hiển thị số lượng
                     ItemsGroup(items.first(), items.size, items.toMutableList())
                 }
-        // 3. BỘ LỌC CHO CỬA HÀNG (SHOP)
         val ShopList: List<ItemsGroup>
             get() = historyList
                 .filter { it.isListedOnShop && !it.isSold }
@@ -424,7 +421,6 @@ class MainActivity : AppCompatActivity() {
     object PriceManager {
         val priceList = mutableListOf<ItemPrice>()
 
-        // 1. HÀM CHUYÊN LẤY GIÁ GỐC (Link trực tiếp tới Số Sao)
         fun getBasePrice(stars: Int): Int {
             return when (stars) {
                 5 -> 10
@@ -433,10 +429,8 @@ class MainActivity : AppCompatActivity() {
                 else -> 0
             }
         }
-        // 2. HÀM LẤY GIÁ THỰC TẾ (Check giá riêng trước, không có thì xài giá gốc)
         fun getPrice(item: WishHistory): Int {
             val foundItem = priceList.find { it.name == item.name }
-            // Gọi lại hàm getBasePrice ở trên cho gọn!
             return foundItem?.sellPrice ?: getBasePrice(item.rarity.stars)
         }
     }
@@ -448,18 +442,14 @@ class MainActivity : AppCompatActivity() {
 
         val allData = ItemsManager.historyList.reversed()
 
-        // Ánh xạ RecyclerView và Cài đặt Adapter
+        val rcvHistory: RecyclerView = findViewById(R.id.rcvHistory)
 
-        val rcvHistory: RecyclerView = findViewById(R.id.rcvHistory)// Tìm RecyclerView trên giao diện XML để chuẩn bị hiển thị dữ liệu
-
-        val historyAdapter = HistoryAdapter(emptyList()) // Ban đầu để rỗng, sẽ cập nhật qua hàm loadPage
-        rcvHistory.layoutManager = LinearLayoutManager(this)// Quy định cách sắp xếp các dòng xếp theo dạng danh sách cuộn dọc từ trên xuống
+        val historyAdapter = HistoryAdapter(emptyList())
+        rcvHistory.layoutManager = LinearLayoutManager(this)
         rcvHistory.adapter = historyAdapter
 
-        //Tự động vẽ thêm các đường kẻ ngang ngăn cách giữa các dòng để tạo thành hình cái bảng
         rcvHistory.addItemDecoration(androidx.recyclerview.widget.DividerItemDecoration(this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL))
 
-        // Xử lý Logic Phân trang (Pagination)
         val btnPrevPage: Button = findViewById(R.id.btnDecrease)
         val btnNextPage: Button = findViewById(R.id.btnIncrease)
         val tvCurrentPage: TextView = findViewById(R.id.tvNumber)
@@ -711,7 +701,7 @@ class MainActivity : AppCompatActivity() {
             UserManager.addWishes(this, totalEarned)
 
             // 5. LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
-            UserManager.saveHistory(this)
+            UserManager.saveItems(this)
             loadGroupedInventory() // Hàm vẽ lại lưới Túi đồ của sếp
 
             Toast.makeText(this, "Đã bán $sellQuantity món, nhận $totalEarned Tiền!", Toast.LENGTH_SHORT).show()
@@ -740,7 +730,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // 4. LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
-            UserManager.saveHistory(this)
+            UserManager.saveItems(this)
             loadGroupedInventory() // Hàm vẽ lại lưới Túi đồ của sếp
 
             Toast.makeText(this, "Đã đưa $sellQuantity món lên Shop với giá $userCustomPrice!", Toast.LENGTH_SHORT).show()
@@ -909,44 +899,32 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnConfirmBuy.setOnClickListener {
-            // Kiểm tra xem đã chọn món nào chưa
+
             val group = currentSelectedGroup ?: return@setOnClickListener
 
             val totalCost = group.sampleItem.customPrice * buyQuantity
 
-            // 2. LẤY RA ĐÚNG SỐ LƯỢNG MÓN ĐỒ CẦN XỬ LÝ
             val itemsToBuy = group.rawItems.take(buyQuantity)
             val currentMoney = UserManager.getWishes(this)
 
-            // Kiểm tra xem có đủ tiền không
+
             if (currentMoney < totalCost) {
-                // Không đủ tiền -> Báo lỗi và dừng ngay lập tức (return)
                 Toast.makeText(this, "Không đủ tiền! Bạn cần $totalCost tiền.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-
-            // ==========================================
-            // 3. XỬ LÝ LOGIC "MUA BÁN" (Sếp dùng Cách 1 hoặc Cách 2)
-            // ==========================================
-
-            // ▶ CÁCH 1: NGƯỜI KHÁC MUA MẤT ĐỒ CỦA SẾP
-            // Đồ sẽ biến mất khỏi Shop,NHẬN được tiền
             itemsToBuy.forEach { item ->
-                item.isSold = true           // Đồ đã bị bán đứt
+                item.isSold = true           // Đồ đã bị bán
                 item.isListedOnShop = false  // Gỡ xuống khỏi kệ
             }
             UserManager.removeWishes(this, totalCost)
-            // 4. LƯU LẠI VÀ CẬP NHẬT GIAO DIỆN
-            // ==========================================
 
-            // Gọi cái "két sắt" ra để lưu trạng thái mới (Sếp gọi đúng tên hàm sếp đang dùng nhé)
-            UserManager.saveHistory(this)
+            UserManager.saveItems(this)
 
-            // Báo tin vui
+            // Báo tin
             Toast.makeText(this, "Giao dịch thành công $buyQuantity ${group.sampleItem.name}!", Toast.LENGTH_SHORT).show()
 
-            // Load lại màn hình Shop (Hệ thống sẽ tự quét lại Kho, thấy món nào isListedOnShop = false là tự cho tàng hình khỏi kệ)
+            // Load lại màn hình Shop hệ thống sẽ tự quét lại Kho, thấy món nào isListedOnShop = false là tự cho tàng hình khỏi kệ
             loadShopData()
         }
         btnBackInventory.setOnClickListener {
@@ -963,7 +941,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // 4. LƯU LẠI VÀO KÉT SẮT (Bắt buộc để chống mất dữ liệu)
-            UserManager.saveHistory(this) // Nếu sếp để hàm save trong UserManager thì gọi UserManager.saveHistory(this)
+            UserManager.saveItems(this) // Nếu sếp để hàm save trong UserManager thì gọi UserManager.saveHistory(this)
 
             // 5. Báo tin vui
             Toast.makeText(this, "Đã rút $buyQuantity ${group.sampleItem.name} về túi!", Toast.LENGTH_SHORT).show()

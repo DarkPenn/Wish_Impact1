@@ -90,51 +90,52 @@ object UserManager {
         return false    //Không đủ tiền
     }
 
-    // HÀM LƯU DỮ LIỆU VÀO ĐIỆN THOẠI
-    fun saveHistory(context: Context) {
-        // 1. Mở "két sắt"
+    //bảo vệ tài sản của người chơi không bị bốc hơi sau khi họ thoát ứng dụng hoặc tắt điện thoại
+    fun saveItems(context: Context) {
+        // chỉnh tiền
         val editor = getPrefs(context).edit()
+
+        // Tạo một nơi để chứa tất cả các món đồ
         val jsonArray = JSONArray()
 
-        // 2. CHẠY SANG HISTORY MANAGER ĐỂ LẤY DANH SÁCH ĐỒ
+        // scan từng món đồ đang có trong historyList
         for (item in MainActivity.ItemsManager.historyList) {
+
+            // với mỗi món đồ tạo một JSONObject để gói thông tin
             val jsonObject = JSONObject()
 
-            // Đóng gói từng thuộc tính của món đồ
+            // bỏ từng thông tin của món đồ vào JSONObject
             jsonObject.put("name", item.name)
             jsonObject.put("star", item.rarity.stars)
             jsonObject.put("time", item.time)
-            jsonObject.put("customPrice", item.customPrice)
+            jsonObject.put("customPrice", item.customPrice) // Giá tự định ở shop
 
-            // 👇 DÒNG SINH TỬ SẾP QUÊN: LƯU TRẠNG THÁI VÀO JSON 👇
+            // lưu 2 trạng thái (quyết định vị trí của món đồ)
             jsonObject.put("isListedOnShop", item.isListedOnShop)
             jsonObject.put("isSold", item.isSold)
 
-            // Bỏ vào mảng
             jsonArray.put(jsonObject)
         }
 
-        // 3. Lưu mảng danh sách đồ thành chuỗi JSON
+        // Ép toàn bộ cái thông tin của món đồ thành 1 Dòng Chữ duy nhất
         val historyString = jsonArray.toString()
+
         editor.putString(KEY_HISTORY, historyString)
 
-        // 4. Chốt lệnh lưu
+        // Khóa lại và lưu thay đổi!
         editor.apply()
     }
 
-    fun openHistory(context: Context) {
+    fun loadItems(context: Context) {
         val prefs = getPrefs(context)
 
-        // 1. Dọn sạch kho cũ
         MainActivity.ItemsManager.historyList.clear()
 
-        // 2. Lấy chuỗi JSON từ "két sắt" ra
         val historyString = prefs.getString(KEY_HISTORY, "[]")
 
         try {
             val jsonArray = JSONArray(historyString)
 
-            // Vòng lặp bóc tách từng gói đồ
             for (i in 0 until jsonArray.length()) {
                 val jsonObject = jsonArray.getJSONObject(i)
 
@@ -143,24 +144,19 @@ object UserManager {
                 val itemTime = jsonObject.getString("time")
                 val itemPrice = jsonObject.getInt("customPrice")
 
-                // 👇 DÒNG SINH TỬ SẾP QUÊN: ĐỌC TRẠNG THÁI TỪ JSON RA 👇
-                // (Dùng optBoolean để nếu file cũ không có thì mặc định là false, không bị crash app)
                 val isListed = jsonObject.optBoolean("isListedOnShop", false)
                 val isSold = jsonObject.optBoolean("isSold", false)
 
-                // 3. Lắp ráp lại thành món đồ hoàn chỉnh
                 val restoredItem = WishHistory(
                     stt = i + 1,
                     name = itemName,
                     rarity = Rarity.entries.first { it.stars == itemStar },
                     time = itemTime,
                     customPrice = itemPrice,
-                    // 👇 GẮN LẠI TRẠNG THÁI CHO MÓN ĐỒ 👇
                     isListedOnShop = isListed,
                     isSold = isSold
                 )
 
-                // 4. Nhét đồ ngược trở lại KHO
                 MainActivity.ItemsManager.historyList.add(restoredItem)
             }
         } catch (e: Exception) {
