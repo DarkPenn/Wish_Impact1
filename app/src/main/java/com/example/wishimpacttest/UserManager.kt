@@ -90,81 +90,85 @@ object UserManager {
         return false    //Không đủ tiền
     }
 
-    // HÀM LƯU DỮ LIỆU VÀO ĐIỆN THOẠI
-    fun saveHistory(context: Context) {
-        // 1. Mở "két sắt"
+    //bảo vệ tài sản của người chơi không bị bốc hơi sau khi họ thoát ứng dụng hoặc tắt điện thoại
+    fun saveItems(context: Context) {
+        // chỉnh tiền
         val editor = getPrefs(context).edit()
+
+        // Tạo một nơi để chứa tất cả các món đồ
         val jsonArray = JSONArray()
 
-        // 2. CHẠY SANG HISTORY MANAGER ĐỂ LẤY DANH SÁCH ĐỒ
+        // scan từng món đồ đang có trong historyList
         for (item in MainActivity.ItemsManager.historyList) {
+
+            // với mỗi món đồ tạo một JSONObject để gói thông tin
             val jsonObject = JSONObject()
 
-            // Đóng gói từng thuộc tính của món đồ
+            // bỏ từng thông tin của món đồ vào JSONObject
             jsonObject.put("name", item.name)
             jsonObject.put("star", item.rarity.stars)
             jsonObject.put("time", item.time)
-            jsonObject.put("customPrice", item.customPrice)
+            jsonObject.put("customPrice", item.customPrice) // Giá tự định ở shop
 
-            // 👇 DÒNG SINH TỬ SẾP QUÊN: LƯU TRẠNG THÁI VÀO JSON 👇
+            // lưu 2 trạng thái (quyết định vị trí của món đồ)
             jsonObject.put("isListedOnShop", item.isListedOnShop)
             jsonObject.put("isSold", item.isSold)
 
-            // Bỏ vào mảng
             jsonArray.put(jsonObject)
         }
 
-        // 3. Lưu mảng danh sách đồ thành chuỗi JSON
+        // Ép toàn bộ cái thông tin của món đồ thành 1 Dòng Chữ duy nhất
         val historyString = jsonArray.toString()
+
         editor.putString(KEY_HISTORY, historyString)
 
-        // 4. Chốt lệnh lưu
+        // Khóa lại và lưu thay đổi!
         editor.apply()
     }
 
-    fun openHistory(context: Context) {
+    fun loadItems(context: Context) {
         val prefs = getPrefs(context)
 
-        // 1. Dọn sạch kho cũ
+        // dọn sạch kho hiện tại tránh tình trạng người chơi ấn Load đồ trong túi lại bị nhân đôi lên.
         MainActivity.ItemsManager.historyList.clear()
 
-        // 2. Lấy chuỗi JSON từ "két sắt" ra
+        // đọc dữ liệu từ kho nếu rỗng thì tự động trả về mảng rỗng
         val historyString = prefs.getString(KEY_HISTORY, "[]")
 
         try {
+            // biến cái chuỗi chữ dài ngoằng đó thành mảng
             val jsonArray = JSONArray(historyString)
 
-            // Vòng lặp bóc tách từng gói đồ
+            // Khui từng cái trong mảng ra
             for (i in 0 until jsonArray.length()) {
                 val jsonObject = jsonArray.getJSONObject(i)
 
-                val itemName = jsonObject.getString("name")
-                val itemStar = jsonObject.getInt("star")
-                val itemTime = jsonObject.getString("time")
-                val itemPrice = jsonObject.getInt("customPrice")
+                // đọc các thông số cơ bản
+                val itemName = jsonObject.getString("name")        // Tên món đồ
+                val itemStar = jsonObject.getInt("star")           // Số sao
+                val itemTime = jsonObject.getString("time")        // Thời gian nhận
+                val itemPrice = jsonObject.getInt("customPrice")   // Giá người chơi đặt
 
-                // 👇 DÒNG SINH TỬ SẾP QUÊN: ĐỌC TRẠNG THÁI TỪ JSON RA 👇
-                // (Dùng optBoolean để nếu file cũ không có thì mặc định là false, không bị crash app)
                 val isListed = jsonObject.optBoolean("isListedOnShop", false)
                 val isSold = jsonObject.optBoolean("isSold", false)
 
-                // 3. Lắp ráp lại thành món đồ hoàn chỉnh
+
                 val restoredItem = WishHistory(
-                    stt = i + 1,
+                    stt = i + 1, // đánh lại stt
                     name = itemName,
                     rarity = Rarity.entries.first { it.stars == itemStar },
                     time = itemTime,
                     customPrice = itemPrice,
-                    // 👇 GẮN LẠI TRẠNG THÁI CHO MÓN ĐỒ 👇
                     isListedOnShop = isListed,
                     isSold = isSold
                 )
 
-                // 4. Nhét đồ ngược trở lại KHO
+                // Xếp món đồ vào lại Kho
                 MainActivity.ItemsManager.historyList.add(restoredItem)
             }
         } catch (e: Exception) {
+            // Nếu file save bị hỏng
+            // App sẽ không bị văng mà chỉ in lỗi ra màn hình Log.
             e.printStackTrace()
         }
-    }
-}
+    }}
