@@ -32,7 +32,9 @@
                 android:layout_centerVertical="true"
                 android:backgroundTint="#444466"
                 android:text="Quay lại"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:scaleType="fitCenter"
+                />
 
             <TextView
                 android:layout_width="wrap_content"
