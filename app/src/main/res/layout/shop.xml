@@ -156,7 +156,6 @@
                 android:textColor="#FFFFFF"
                 android:textSize="22sp"
                 android:textStyle="bold" />
-            <!-- Thêm phần hiển thị User và Tiền ở góc phải -->
             <LinearLayout
                 android:id="@+id/userSectionMain"
                 android:layout_width="wrap_content"
@@ -168,9 +167,10 @@
 
                 <!-- Icon Tiền tệ -->
                 <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginEnd="4dp"/>
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/img_wish"/>
 
                 <!-- Số tiền -->
                 <TextView

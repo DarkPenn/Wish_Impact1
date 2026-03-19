@@ -132,14 +132,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupMainActivity() {
         setContentView(R.layout.activity_main)
-        UserManager.loadItems(this)
         //Hiển thị Tiền và tên Customer ở góc phải
         if(UserManager.isLoggedIn(this)==false) {
             findViewById<TextView>(R.id.tvTotalWishes).text = 0.toString()
             findViewById<TextView>(R.id.tvUserNameMain).text = "Customer"
+            ItemsManager.historyList.clear()
         } else {
             findViewById<TextView>(R.id.tvTotalWishes).text = UserManager.getWishes(this).toString()
             findViewById<TextView>(R.id.tvUserNameMain).text = UserManager.getDisplayName(this)
+            UserManager.loadItems(this)
         }
 
         //Hiển thị nút icon và đăng xuất nếu đã đăng nhập ở trên góc bên phải sử dụng popup
@@ -384,6 +385,7 @@ class MainActivity : AppCompatActivity() {
 
             //Trả kết quả về khung (LinearLayout) hiển thi kết quả
             resultContainer.addView(itemView)
+            UserManager.saveItems(this)
         }
 
         //Cài đặt nút quay lại màn hình quay
