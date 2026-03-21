@@ -1,9 +1,12 @@
 package com.example.wishimpacttest
 
+import android.R
 import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
+
+
 
 // Object này giúp chúng ta lưu dữ liệu người dùng vào máy (SharedPreferences)
 // để khi tắt app mở lại vẫn còn tài khoản.
@@ -14,7 +17,8 @@ object UserManager {
     private const val KEY_PASSWORD = "password"
     private const val KEY_IS_LOGGED_IN = "isLoggedIn"
     private const val KEY_TOTAL_WISHES = "totalWishes"  //Lưu tổng số lần quay theo tài khoản
-    private const val KEY_HISTORY = "history"   //Lưu lịch sử quay theo tài khoản
+    private const val KEY_HISTORY = "history"
+    private fun getHistoryKey(accountId: String) = "history_$accountId"  //Lưu lịch sử quay theo tài khoản
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -32,6 +36,7 @@ object UserManager {
         // Lưu lại tổng số lần quay
         editor.putInt(KEY_TOTAL_WISHES, 100) //Tặng free 100 Roll khi tạo acc
         editor.apply()
+
     }
 
     // Hàm kiểm tra đăng nhập
@@ -90,8 +95,19 @@ object UserManager {
         return false    //Không đủ tiền
     }
 
+    fun getUsername(context: Context): String {
+        return getPrefs(context).getString(KEY_USERNAME, "") ?: ""
+    }
+
+    fun clearItems(context: Context, accountId: String) {
+        getPrefs(context).edit()
+            .remove(getHistoryKey(accountId))
+            .apply()
+        MainActivity.ItemsManager.historyList.clear()
+    }
+
     //bảo vệ tài sản của người chơi không bị bốc hơi sau khi họ thoát ứng dụng hoặc tắt điện thoại
-    fun saveItems(context: Context) {
+    fun saveItems(context: Context, accountId: String) {
         // chỉnh tiền
         val editor = getPrefs(context).edit()
 
@@ -109,10 +125,14 @@ object UserManager {
             jsonObject.put("star", item.rarity.stars)
             jsonObject.put("time", item.time)
             jsonObject.put("customPrice", item.customPrice) // Giá tự định ở shop
+            jsonObject.put("listedBy", item.listedBy) // ← nhớ ai là người push
+
 
             // lưu 2 trạng thái (quyết định vị trí của món đồ)
             jsonObject.put("isListedOnShop", item.isListedOnShop)
             jsonObject.put("isSold", item.isSold)
+            jsonObject.put("listedBy", item.listedBy) // nhớ ai là người push
+
 
             jsonArray.put(jsonObject)
         }
@@ -120,20 +140,20 @@ object UserManager {
         // Ép toàn bộ cái thông tin của món đồ thành 1 Dòng Chữ duy nhất
         val historyString = jsonArray.toString()
 
-        editor.putString(KEY_HISTORY, historyString)
+        editor.putString(getHistoryKey(accountId), historyString) // ✅ đổi key
 
         // Khóa lại và lưu thay đổi!
         editor.apply()
     }
 
-    fun loadItems(context: Context) {
+    fun loadItems(context: Context,  accountId: String) {
         val prefs = getPrefs(context)
 
         // dọn sạch kho hiện tại tránh tình trạng người chơi ấn Load đồ trong túi lại bị nhân đôi lên.
         MainActivity.ItemsManager.historyList.clear()
 
         // đọc dữ liệu từ kho nếu rỗng thì tự động trả về mảng rỗng
-        val historyString = prefs.getString(KEY_HISTORY, "[]")
+        val historyString = prefs.getString(getHistoryKey(accountId), "[]")
 
         try {
             // biến cái chuỗi chữ dài ngoằng đó thành mảng
@@ -151,6 +171,8 @@ object UserManager {
 
                 val isListed = jsonObject.optBoolean("isListedOnShop", false)
                 val isSold = jsonObject.optBoolean("isSold", false)
+                val listedBy = jsonObject.optString("listedBy", "")
+
 
 
                 val restoredItem = WishHistory(
@@ -160,7 +182,9 @@ object UserManager {
                     time = itemTime,
                     customPrice = itemPrice,
                     isListedOnShop = isListed,
-                    isSold = isSold
+                    isSold = isSold,
+                    listedBy = listedBy
+
                 )
 
                 // Xếp món đồ vào lại Kho
@@ -171,4 +195,5 @@ object UserManager {
             // App sẽ không bị văng mà chỉ in lỗi ra màn hình Log.
             e.printStackTrace()
         }
-    }}
+    }
+}
