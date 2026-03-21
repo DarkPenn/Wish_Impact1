@@ -34,7 +34,7 @@ class InventoryAdapter(
         holder.tvGridStars.text = "★".repeat(item.rarity.stars)
 
         holder.tvItemQuantity.text = "${group.totalCount}"
-        if (group.totalCount > 1) {
+        if (group.totalCount >= 1) {
             holder.tvItemQuantity.visibility = View.VISIBLE
         } else {
             holder.tvItemQuantity.visibility = View.INVISIBLE
