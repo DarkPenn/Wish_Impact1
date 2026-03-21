@@ -101,7 +101,7 @@ object UserManager {
 
     fun clearItems(context: Context, accountId: String) {
         getPrefs(context).edit()
-            .remove(getHistoryKey(accountId)) // xóa "history_abc" hoặc "history_xyz"
+            .remove(getHistoryKey(accountId))
             .apply()
         MainActivity.ItemsManager.historyList.clear()
     }
