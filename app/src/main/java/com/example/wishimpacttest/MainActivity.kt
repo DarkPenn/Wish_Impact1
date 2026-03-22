@@ -39,8 +39,7 @@ data class WishHistory(
     val time: String,   // Thời gian quay
     var customPrice: Int = 0, // có thể thay đổi được giá item
     var isSold: Boolean = false,// nếu true thì item đã bán ra (getbasePrice)
-    var isListedOnShop: Boolean = false,// nếu true thì item đã trên kệ của shop (getPrice)
-    var listedBy: String = "" // lưu username người đăng
+    var isListedOnShop: Boolean = false// nếu true thì item đã trên kệ của shop (getPrice)
 )
 
 // Tạo một class mới để chứa nhóm vật phẩm
@@ -78,8 +77,6 @@ class MainActivity : AppCompatActivity() {
     private var pity5 = 0 //pity luôn bắt đầu từ 0
     private var pity4 = 0 //pity luôn bắt đầu từ 0
     private var currentBannerImage: Int = R.drawable.banner1 //dòng dùng để lưu trữ ID của tấm hình banner được chọn
-    var currentAccountId: String = ""
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,9 +101,6 @@ class MainActivity : AppCompatActivity() {
                         "Trang cá nhân" -> showProfile()
                         "Đăng xuất" -> {
                             UserManager.logout(this)
-                            ItemsManager.historyList.clear()
-                            ItemsManager.STT = 0
-                            currentAccountId = ""
                             showChooseBanner()
                             Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show()
                         }
@@ -135,17 +129,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun setupMainActivity() {
         setContentView(R.layout.activity_main)
-
         //Hiển thị Tiền và tên Customer ở góc phải
         if(UserManager.isLoggedIn(this)==false) {
             findViewById<TextView>(R.id.tvTotalWishes).text = 0.toString()
             findViewById<TextView>(R.id.tvUserNameMain).text = "Customer"
+            ItemsManager.historyList.clear()
         } else {
             findViewById<TextView>(R.id.tvTotalWishes).text = UserManager.getWishes(this).toString()
             findViewById<TextView>(R.id.tvUserNameMain).text = UserManager.getDisplayName(this)
-            UserManager.loadItems(this, currentAccountId)
+            UserManager.loadItems(this)
         }
 
         //Hiển thị nút icon và đăng xuất nếu đã đăng nhập ở trên góc bên phải sử dụng popup
@@ -159,9 +154,6 @@ class MainActivity : AppCompatActivity() {
                         "Trang cá nhân" -> showProfile()
                         "Đăng xuất" -> {
                             UserManager.logout(this)
-                            ItemsManager.historyList.clear()
-                            ItemsManager.STT = 0
-                            currentAccountId = ""
                             setupMainActivity()
                             Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show()
                         }
@@ -214,8 +206,6 @@ class MainActivity : AppCompatActivity() {
                 UserManager.removeWishes(this,1)    //Trừ 1 Tiền tệ sau khi quay 1 lần
                 // listOf(item) là biến 1 món đồ đơn lẻ thành 1 danh sách để hàm hiển thị xử
                 showResultInBannerLayout(listOf(item))
-                UserManager.saveItems(this,currentAccountId)
-
             }  else{
                 Toast.makeText(this, "Bạn không đủ tiền để quay!", Toast.LENGTH_SHORT).show()
             }
@@ -226,9 +216,6 @@ class MainActivity : AppCompatActivity() {
                 val items = List(10) { pullOne() }  //Gọi hàm logic để lấy ra 10 món đồ ngẫu nhiên
                 UserManager.removeWishes(this,10)   //Trừ 10 Tiền tệ sau khi quay 10 lần
                 showResultInBannerLayout(items)  //Chuyển sang màn hình kết quả để hiển thị toàn bộ danh sách 10 món đồ
-                UserManager.saveItems(this,currentAccountId)
-
-
             } else{
                 Toast.makeText(this, "Bạn không đủ tiền để quay!", Toast.LENGTH_SHORT).show()
             }
@@ -245,8 +232,6 @@ class MainActivity : AppCompatActivity() {
             val user = edtUser.text.toString().trim() //dùng để lấy dữ liệu từ EditText cũng như tránh việc để khoảng trắng
             val pass = edtPass.text.toString().trim() //dùng để lấy dữ liệu từ EditText cũng như tránh việc để khoảng trắng
             if (UserManager.login(this, user, pass)) {
-                currentAccountId = user
-                UserManager.loadItems(this, currentAccountId)
                 Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
                 showChooseBanner()
             } else {
@@ -272,9 +257,7 @@ class MainActivity : AppCompatActivity() {
             } else if (name.contains(" ") || user.contains(" ") || pass.contains(" ")) {
                 Toast.makeText(this, "Không được có khoảng trắng!", Toast.LENGTH_SHORT).show()
             } else {
-                UserManager.clearItems(this, user) // thêm dòng này để xóa dữ liệu acc cũ (clear cả RAM lẫn file save)
                 UserManager.register(this, name, user, pass)
-                currentAccountId = user
                 Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
                 showChooseBanner() // Đăng ký xong tự động vào luôn
             }
@@ -384,7 +367,6 @@ class MainActivity : AppCompatActivity() {
             )
             ItemsManager.historyList.add(historyRecord)
 
-
             val itemView = TextView(this)
             val stars = "★".repeat(item.rarity.stars) //Tạo hình ngôi sao tương ứng với độ hiếm
             itemView.text = "${item.name}\n$stars" //Hiển thị tên vật phẩm và hình ngôi sao
@@ -403,19 +385,12 @@ class MainActivity : AppCompatActivity() {
 
             //Trả kết quả về khung (LinearLayout) hiển thi kết quả
             resultContainer.addView(itemView)
+            UserManager.saveItems(this)
         }
-        UserManager.saveItems(this,currentAccountId)
-
 
         //Cài đặt nút quay lại màn hình quay
         btnBack.setOnClickListener {
             setupMainActivity()
-        }
-    }
-    override fun onPause() {
-        super.onPause()
-        if (currentAccountId.isNotEmpty()) {
-            UserManager.saveItems(this, currentAccountId)
         }
     }
     // nơi quản lý toàn bộ vật phẩm trong game
@@ -723,11 +698,11 @@ class MainActivity : AppCompatActivity() {
             itemsToSell.forEach { item ->
                 item.isSold = true // Đồ lập tức tàng hình khỏi cả Túi và Shop
             }
-            // Cộng tiền cho User
+            // 4. Cộng tiền cho User
             UserManager.addWishes(this, totalEarned)
 
-            // LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
-            UserManager.saveItems(this,currentAccountId)
+            // 5. LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
+            UserManager.saveItems(this)
             loadGroupedInventory() // Hàm vẽ lại lưới Túi đồ của sếp
 
             Toast.makeText(this, "Đã bán $sellQuantity món, nhận $totalEarned Tiền!", Toast.LENGTH_SHORT).show()
@@ -750,16 +725,13 @@ class MainActivity : AppCompatActivity() {
             val itemsToPush = selectedGroup.rawItems.take(sellQuantity)
 
             // 3. LOGIC CHUYỂN ĐỔI: Tắt cờ Túi, Bật cờ Shop, Dán giá
-            val currentUser = UserManager.getUsername(this) // ← lấy username
             itemsToPush.forEach { item ->
                 item.isListedOnShop = true // Lập tức tàng hình khỏi Túi và hiện ra ở Shop
                 item.customPrice = userCustomPrice
-                item.listedBy = currentUser // gán ai người push
-
             }
 
             // 4. LƯU VÀO KÉT SẮT VÀ CẬP NHẬT UI
-            UserManager.saveItems(this,currentAccountId)
+            UserManager.saveItems(this)
             loadGroupedInventory() // Hàm vẽ lại lưới Túi đồ của sếp
 
             Toast.makeText(this, "Đã đưa $sellQuantity món lên Shop với giá $userCustomPrice!", Toast.LENGTH_SHORT).show()
@@ -897,6 +869,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // BẮT SỰ KIỆN NÚT
         btnCloseShopPanel.setOnClickListener {
             panelBuyDetail.visibility = View.GONE
             currentSelectedGroup = null
@@ -947,7 +920,7 @@ class MainActivity : AppCompatActivity() {
             }
             UserManager.removeWishes(this, totalCost)
 
-            UserManager.saveItems(this,currentAccountId)
+            UserManager.saveItems(this)
 
             // Báo tin
             Toast.makeText(this, "Giao dịch thành công $buyQuantity ${group.sampleItem.name}!", Toast.LENGTH_SHORT).show()
@@ -959,23 +932,17 @@ class MainActivity : AppCompatActivity() {
             // 1. Lấy cái hộp đồ mà người chơi đang bấm chọn trên màn hình
             val group = currentSelectedGroup ?: return@setOnClickListener
 
-            // chỉ cho rút nếu chính mình push
-            val currentUser = UserManager.getUsername(this)
-            val isOwner = group.rawItems.take(buyQuantity).all { it.listedBy == currentUser }
-            if (!isOwner) {
-                Toast.makeText(this, "Bạn không phải người bán món đồ này!", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Lấy đúng số lượng đồ muốn rút về
+            // 2. Lấy đúng số lượng đồ muốn rút về (Dùng chung biến buyQuantity cho tiện)
             val itemsToWithdraw = group.rawItems.take(buyQuantity)
 
+            // 3. LOGIC LÕI: Tắt cờ Shop.
             // (Vì isSold vẫn là false, nên tắt cờ Shop xong kính lúp Túi Đồ sẽ tự động nhìn thấy nó lại)
             itemsToWithdraw.forEach { item ->
                 item.isListedOnShop = false
             }
 
-            UserManager.saveItems(this,currentAccountId)
+            // 4. LƯU LẠI VÀO KÉT SẮT (Bắt buộc để chống mất dữ liệu)
+            UserManager.saveItems(this) // Nếu sếp để hàm save trong UserManager thì gọi UserManager.saveHistory(this)
 
             // 5. Báo tin vui
             Toast.makeText(this, "Đã rút $buyQuantity ${group.sampleItem.name} về túi!", Toast.LENGTH_SHORT).show()
