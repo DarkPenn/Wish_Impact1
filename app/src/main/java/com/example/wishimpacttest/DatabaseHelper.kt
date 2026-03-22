@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
 // DatabaseHelper giúp quản lý việc tạo file .db và các bảng dữ liệu
-class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.db", null, 1) {
+class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
         // 1. Tạo bảng User (Người dùng)
@@ -37,6 +37,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
                 UserID INTEGER,
                 VatPhamID INTEGER,
                 ThoiGian TEXT,
+                isSold INTEGER DEFAULT 0,
+                isListedOnShop INTEGER DEFAULT 0,
+                customPrice INTEGER DEFAULT 0,
+                 listedBy TEXT DEFAULT '',
                 FOREIGN KEY(UserID) REFERENCES User(ID),
                 FOREIGN KEY(VatPhamID) REFERENCES VatPham(ID)
             )

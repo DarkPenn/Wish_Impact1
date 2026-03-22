@@ -2,8 +2,11 @@ package com.example.wishimpacttest
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.database.DefaultDatabaseErrorHandler
 import org.json.JSONArray
 import org.json.JSONObject
+
+
 
 // Object này giúp chúng ta lưu dữ liệu người dùng vào máy (SharedPreferences)
 // để khi tắt app mở lại vẫn còn tài khoản.
@@ -48,7 +51,8 @@ object UserManager {
         return getPrefs(context).getBoolean(KEY_IS_LOGGED_IN, false) //khi nhập dữ liệu vô thì sẽ kiểm tra xem các điều kiện xem nếu không thỏa mãn thì sẽ không cho phép đăng nhập vô
     }
 
-    // Lấy ID người dùng hiện tại để kiểm tra xem đã đăng nhập chưa
+    // Lấy ID người dùng hiện tại để
+    // kiểm tra xem đã đăng nhập chưa
     fun getCurrentUserId(context: Context): Int {
         return getPrefs(context).getInt(KEY_USER_ID, -1)
     }
@@ -66,6 +70,7 @@ object UserManager {
         cursor.close()
         return name
     }
+
 
     // Hàm cập nhật thông tin cá nhân (chủ yếu đổi mật khẩu)
     fun updateProfile(context: Context, newName: String, newPass: String) {
@@ -95,6 +100,8 @@ object UserManager {
         return xu
     }
 
+
+
     // Hàm tăng tiền tệ (khi nạp, làm nv,...)
     fun addWishes(context: Context, amount: Int) {
         val current = getWishes(context)
@@ -113,13 +120,21 @@ object UserManager {
         return false    // Không đủ tiền
     }
 
-    // bảo vệ tài sản của người chơi không bị bốc hơi sau khi họ thoát ứng dụng hoặc tắt điện thoại
-    fun saveItems(context: Context) {
-        // SQLite tự động lưu mỗi khi gọi người dùng thêm hay cập nhật tài khoản
+    // Tạo key riêng cho từng acc dựa theo userId
+    private fun getHistoryKey(context: Context): String {
+        val userId = getCurrentUserId(context)
+        return "history_$userId"
     }
 
-    fun loadItems(context: Context) {
-        // Dữ liệu sẽ được load trực tiếp từ bảng History khi cần thiết
+    fun getUsername(context: Context): String {
+        if (!isLoggedIn(context)) return ""
+        val userId = getCurrentUserId(context)
+        val db = DatabaseHelper(context).readableDatabase
+        val cursor = db.rawQuery("SELECT TenDangNhap FROM User WHERE ID=?", arrayOf(userId.toString()))
+        var username = ""
+        if (cursor.moveToFirst()) username = cursor.getString(0)
+        cursor.close()
+        return username
     }
 
     // Hàm lấy mật khẩu thật hiện tại
