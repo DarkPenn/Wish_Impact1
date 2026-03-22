@@ -1,78 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#1E1E2E"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:fillViewport="true">
 
-    <!-- Header với nút quay lại bên trái -->
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp">
+        android:orientation="vertical"
+        android:padding="20dp">
 
-        <ImageButton
-            android:id="@+id/btnProfileBackTop"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_revert"
-            android:contentDescription="Back" />
+        <!-- Header với nút quay lại bên trái -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp">
+
+            <ImageButton
+                android:id="@+id/btnProfileBackTop"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                android:contentDescription="Back" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="THÔNG TIN CÁ NHÂN"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="THÔNG TIN CÁ NHÂN"
+            android:text="Tên hiển thị:"
+            android:textColor="#888888"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etProfDisplayName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </RelativeLayout>
+            android:backgroundTint="#FFFFFF"
+            android:maxLength="15"
+            android:singleLine="true"
+            android:layout_marginBottom="15dp"/>
 
-    <EditText
-        android:id="@+id/etProfDisplayName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Đổi tên hiển thị"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#888888"
-        android:backgroundTint="#FFFFFF"
-        android:maxLength="15"
-        android:singleLine="true"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mật khẩu:"
+            android:textColor="#888888"
+            android:textSize="14sp" />
 
-    <EditText
-        android:id="@+id/etProfNewPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Mật khẩu mới (để trống nếu không đổi)"
-        android:inputType="textPassword"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#888888"
-        android:backgroundTint="#FFFFFF"
-        android:maxLength="15"
-        android:layout_marginTop="15dp"/>
+        <TextView
+            android:id="@+id/tvProfPasswordMasked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="********"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:padding="10dp"
+            android:layout_marginBottom="5dp"/>
 
-    <EditText
-        android:id="@+id/etProfConfirmPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Xác nhận mật khẩu mới"
-        android:inputType="textPassword"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#888888"
-        android:backgroundTint="#FFFFFF"
-        android:maxLength="15"
-        android:layout_marginTop="10dp"/>
+        <Button
+            android:id="@+id/btnGoToChangePass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đổi mật khẩu"
+            android:textSize="12sp"
+            android:backgroundTint="#444466"
+            android:layout_marginBottom="20dp"/>
 
-    <Button
-        android:id="@+id/btnProfileSave"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Lưu thay đổi"
-        android:layout_marginTop="30dp"
-        android:enabled="false" />
+        <!-- Khu vực đổi mật khẩu -->
+        <LinearLayout
+            android:id="@+id/layoutChangePassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
 
-</LinearLayout>
+            <EditText
+                android:id="@+id/etProfCurrentPass"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Mật khẩu hiện tại"
+                android:inputType="textPassword"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:backgroundTint="#FFFFFF"
+                android:maxLength="15" />
+
+            <EditText
+                android:id="@+id/etProfNewPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Mật khẩu mới"
+                android:inputType="textPassword"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:backgroundTint="#FFFFFF"
+                android:maxLength="15"
+                android:layout_marginTop="10dp" />
+
+            <EditText
+                android:id="@+id/etProfConfirmPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Xác nhận mật khẩu mới"
+                android:inputType="textPassword"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:backgroundTint="#FFFFFF"
+                android:maxLength="15"
+                android:layout_marginTop="10dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnProfileSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lưu thay đổi"
+            android:layout_marginTop="30dp"
+            android:enabled="false" />
+
+    </LinearLayout>
+</ScrollView>
