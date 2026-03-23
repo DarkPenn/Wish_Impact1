@@ -243,26 +243,33 @@ class MainActivity : AppCompatActivity() {
     //Trang đăng ký
     private fun showRegister() {
         setContentView(R.layout.layout_register)
-        val edtName = findViewById<EditText>(R.id.etRegDisplayName) //Tên hiển thị
-        val edtUser = findViewById<EditText>(R.id.etRegUsername) //Tên đăng nhập
-        val edtPass = findViewById<EditText>(R.id.etRegPassword) //Mật khẩu
+        val edtName = findViewById<EditText>(R.id.etRegDisplayName) // Tên hiển thị
+        val edtUser = findViewById<EditText>(R.id.etRegUsername) // Tên đăng nhập
+        val edtPass = findViewById<EditText>(R.id.etRegPassword) // Mật khẩu
+
         findViewById<Button>(R.id.btnRegisterSubmit).setOnClickListener {
-            val name = edtName.text.toString().trim() //dùng để lấy dữ liệu từ EditText cũng như tránh việc để khoảng trắng
-            val user = edtUser.text.toString().trim() //dùng để lấy dữ liệu từ EditText cũng như tránh việc để khoảng trắng
-            val pass = edtPass.text.toString().trim() //dùng để lấy dữ liệu từ EditText cũng như tránh việc để khoảng trắng
+            val name = edtName.text.toString().trim() // Kiểm tra dữ liệu nhập vào không được khoảng trắng
+            val user = edtUser.text.toString().trim() // Kiểm tra dữ liệu nhập vào không được khoảng trắng
+            val pass = edtPass.text.toString().trim() // Kiểm tra dữ liệu nhập vào không được khoảng trắng
+
             if (name.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập đầy đủ!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Vui lòng nhập đầy đủ!", Toast.LENGTH_SHORT).show() // Nếu không nhập đầy đủ sẽ hiển thị thông báo
             } else if (name.contains(" ") || user.contains(" ") || pass.contains(" ")) {
                 Toast.makeText(this, "Không được có khoảng trắng!", Toast.LENGTH_SHORT).show()
             } else {
-                UserManager.register(this, name, user, pass)
-                Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
-                showChooseBanner() // Đăng ký xong tự động vào luôn
+                // Kiểm tra trùng tên đăng nhập bằng dữ liệu thông qua database
+                val db = DatabaseHelper(this)
+                if (db.isUsernameExists(user)) {
+                    Toast.makeText(this, "Tên đăng nhập này đã có người sử dụng!", Toast.LENGTH_SHORT).show()
+                } else {
+                    UserManager.register(this, name, user, pass)
+                    Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
+                    showChooseBanner() // Nếu đăng ký thành công thì vô thẳng trang chủ
+                }
             }
         }
         findViewById<TextView>(R.id.tvGoToLogin).setOnClickListener { showLogin() }
     }
-
     //Trang cá nhân
     private fun showProfile() {
         setContentView(R.layout.layout_profile)

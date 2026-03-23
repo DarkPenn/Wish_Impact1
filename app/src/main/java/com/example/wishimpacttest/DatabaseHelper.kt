@@ -55,7 +55,16 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
         insertDefaultVatPham(db)
     }
 
-    //Nơi lưu trữ danh sách nhân vật, vật phẩm
+    // Hàm kiểm tra xem Tên đăng nhập đã tồn tại chưa
+    fun isUsernameExists(username: String): Boolean {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT ID FROM User WHERE TenDangNhap=?", arrayOf(username))
+        val exists = cursor.count > 0
+        cursor.close()
+        return exists
+    }
+
+    // Nơi lưu trữ danh sách nhân vật, vật phẩm
     private fun insertDefaultVatPham(db: SQLiteDatabase) {
         val items = listOf(
             Pair("Diluc", 5), Pair("Jean", 5), Pair("Keqing", 5), Pair("Mona", 5), Pair("Qiqi", 5),
@@ -70,11 +79,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
         }
     }
 
+    // Xóa các bảng User, VatPham, Histor, GiaBanVP khi đăng xuất
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS User")
         db.execSQL("DROP TABLE IF EXISTS VatPham")
         db.execSQL("DROP TABLE IF EXISTS History")
-        db.execSQL("DROP TABLE IF EXISTS GiaBanVP")
         onCreate(db)
     }
 
@@ -109,12 +118,5 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
         val v = ContentValues()
         v.put("SoXu", soXuMoi)
         db.update("User", v, "ID=?", arrayOf(userId.toString()))
-    }
-
-    //          !!!Cách Xóa (Delete)!!!
-    // Xóa một món đồ khỏi shop
-    fun deleteFromShop(shopId: Int) {
-        val db = writableDatabase
-        db.delete("GiaBanVP", "ID=?", arrayOf(shopId.toString()))
     }
 }
