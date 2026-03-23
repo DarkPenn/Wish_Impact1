@@ -2,11 +2,9 @@ package com.example.wishimpacttest
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.database.DefaultDatabaseErrorHandler
+import java.security.MessageDigest
 import org.json.JSONArray
 import org.json.JSONObject
-
-
 
 // Object này giúp chúng ta lưu dữ liệu người dùng vào máy (SharedPreferences)
 // để khi tắt app mở lại vẫn còn tài khoản.
@@ -19,11 +17,21 @@ object UserManager {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     }
 
+    // Hàm mã hóa mật khẩu (Hash SHA-256): Là 1 thuật toán dùng để phân giải dữ liệu thành 1 chuỗi kí tự dài 265 bit (65 kí tự hex) để bảo mật thông tin
+    private fun hashPassword(password: String): String {
+        val bytes = password.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        return digest.fold("") { str, it -> str + "%02x".format(it) }
+    }
+
     // Hàm lưu thông tin đăng ký
     fun register(context: Context, name: String, user: String, pass: String) {
         val db = DatabaseHelper(context)
+        // Mã hóa mật khẩu trước khi đưa vào Database
+        val hashedPass = hashPassword(pass)
         // Gọi hàm thêm người dùng vào SQLite
-        val newId = db.insertUser(name, user, pass)
+        val newId = db.insertUser(name, user, hashedPass)
         
         // Sau khi thêm thành công, lưu ID này vào máy để tự động đăng nhập
         val editor = getPrefs(context).edit()
@@ -35,7 +43,9 @@ object UserManager {
     // Hàm kiểm tra đăng nhập
     fun login(context: Context, user: String, pass: String): Boolean {
         val db = DatabaseHelper(context)
-        val userId = db.checkLogin(user, pass) // Gọi SQLite để kiểm tra coi đã hợp lệ chưa
+        // Mã hóa mật khẩu nhập vào để so sánh với mật khẩu đã mã hóa trong DB
+        val hashedPass = hashPassword(pass)
+        val userId = db.checkLogin(user, hashedPass) // Gọi SQLite để kiểm tra coi đã hợp lệ chưa
         
         if (userId != -1) {
             val editor = getPrefs(context).edit()
@@ -78,7 +88,11 @@ object UserManager {
         val db = DatabaseHelper(context).writableDatabase
         val v = android.content.ContentValues()
         v.put("TenHienThi", newName)
-        if (newPass.isNotEmpty()) v.put("Password", newPass)
+        
+        // Nếu có đổi mật khẩu thì mã hóa mật khẩu mới trước khi lưu
+        if (newPass.isNotEmpty()) {
+            v.put("Password", hashPassword(newPass))
+        }
         
         db.update("User", v, "ID=?", arrayOf(userId.toString()))
     }
@@ -137,7 +151,7 @@ object UserManager {
         return username
     }
 
-    // Hàm lấy mật khẩu thật hiện tại
+    // Hàm lấy mật khẩu hiện tại
     fun getPassword(context: Context): String {
         val userId = getCurrentUserId(context)
         val db = DatabaseHelper(context).readableDatabase
