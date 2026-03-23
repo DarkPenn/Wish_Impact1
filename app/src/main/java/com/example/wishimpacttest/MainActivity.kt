@@ -40,7 +40,9 @@ data class WishHistory(
     val time: String,   // Thời gian quay
     var customPrice: Int = 0, // có thể thay đổi được giá item
     var isSold: Boolean = false,// nếu true thì item đã bán ra (getbasePrice)
-    var isListedOnShop: Boolean = false// nếu true thì item đã trên kệ của shop (getPrice)
+    var isListedOnShop: Boolean = false,// nếu true thì item đã trên kệ của shop (getPrice)
+    var listedBy: String = "",
+    var historyId: Int = 0  // ID trong SQLite để update đúng hàng
 )
 
 // Tạo một class mới để chứa nhóm vật phẩm
@@ -50,11 +52,6 @@ data class ItemsGroup(
     val rawItems: List<WishHistory>     // Danh sách các món đồ thực sự bên trong
 )
 
-data class ItemPrice(
-    val name: String,     // Tên vật phẩm
-    val rarity: Rarity,   // Độ hiếm
-    val sellPrice: Int // Giá tiền của item
-)
 class MainActivity : AppCompatActivity() {
 
     // Khai báo biến giao diện
@@ -388,6 +385,10 @@ class MainActivity : AppCompatActivity() {
                     v.put("UserID", userId)
                     v.put("VatPhamID", vpId)
                     v.put("ThoiGian", currentTime)
+                    v.put("isSold", 0)
+                    v.put("isListedOnShop", 0)
+                    v.put("customPrice", 0)
+                    v.put("listedBy", "")
                     db.insert("History", null, v)
                 }
                 cursor.close()
@@ -419,75 +420,64 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Nơi quản lý toàn bộ vật phẩm trong game
-    object ItemsManager {
-        // Biến này sẽ bị xóa dần khi chuyển hẳn sang SQLite
-        val historyList = mutableListOf<WishHistory>() 
-    }
-
     object PriceManager {
-        val priceList = mutableListOf<ItemPrice>()
-
-        fun getBasePrice(stars: Int): Int {
-            return when (stars) {
-                5 -> 10
-                4 -> 3
-                3 -> 1
-                else -> 0
-            }
-        }
-        fun getPrice(item: WishHistory): Int {
-            val foundItem = priceList.find { it.name == item.name }
-            return foundItem?.sellPrice ?: getBasePrice(item.rarity.stars)
+        fun getBasePrice(stars: Int): Int = when (stars) {
+            5 -> 10
+            4 -> 3
+            3 -> 1
+            else -> 0
         }
     }
-    
-    // Lấy Thông Tin Lịch Sử từ SQLite
-    private fun showHistory(){
-        setContentView(R.layout.reward_history)     // Mở màn hình lịch sử quay
 
-        val tvHistory: TextView = findViewById(R.id.tvHistory)
+
+    private fun showHistory() {
+        setContentView(R.layout.reward_history)
         val imgbtnback: ImageButton = findViewById(R.id.imgbtnBack)
 
-        // Truy vấn dữ liệu JOIN vào bảng HISTORY từ SQLite
+        // Lấy toàn bộ lịch sử của user từ SQLite
         val allData = mutableListOf<WishHistory>()
         if (UserManager.isLoggedIn(this)) {
             val userId = UserManager.getCurrentUserId(this)
             val db = DatabaseHelper(this).readableDatabase
             val sql = """
-                SELECT History.ID, VatPham.TenVatPham, VatPham.SoSao, History.ThoiGian 
-                FROM History 
-                JOIN VatPham ON History.VatPhamID = VatPham.ID 
-                WHERE History.UserID = ? 
+                SELECT History.ID, VatPham.TenVatPham, VatPham.SoSao, History.ThoiGian
+                FROM History
+                JOIN VatPham ON History.VatPhamID = VatPham.ID
+                WHERE History.UserID = ?
                 ORDER BY History.ID DESC
             """
             val cursor = db.rawQuery(sql, arrayOf(userId.toString()))
-            var stt = cursor.count  // Lấy tổng số món đồ hiển thị để đánh số
-            if (cursor.moveToFirst()) {    //Nếu tìm thấy món đồ
+            var stt = cursor.count
+            if (cursor.moveToFirst()) {
                 do {
-                    val name = cursor.getString(1)  // Tên vật phẩm
-                    val star = cursor.getInt(2)     // Số sao
-                    val time = cursor.getString(3)  // Thời gian quay ra
-                    val rarity = Rarity.entries.first { it.stars == star }  // Độ hiếm để hiển thị màu sắc dựa vào số sao
-                    allData.add(WishHistory(stt--, name, rarity, time)) // Thêm vào danh sách tạm thời
+                    val name = cursor.getString(1)
+                    val star = cursor.getInt(2)
+                    val time = cursor.getString(3)
+                    val rarity = Rarity.entries.first { it.stars == star }
+                    allData.add(WishHistory(stt--, name, rarity, time))
                 } while (cursor.moveToNext())
             }
             cursor.close()
         }
 
         val rcvHistory: RecyclerView = findViewById(R.id.rcvHistory)
-        val historyAdapter = HistoryAdapter(emptyList<WishHistory>())
+        val historyAdapter = HistoryAdapter(emptyList())
         rcvHistory.layoutManager = LinearLayoutManager(this)
         rcvHistory.adapter = historyAdapter
-        rcvHistory.addItemDecoration(androidx.recyclerview.widget.DividerItemDecoration(this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL))
+        rcvHistory.addItemDecoration(
+            androidx.recyclerview.widget.DividerItemDecoration(
+                this, androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+            )
+        )
 
         val btnPrevPage: Button = findViewById(R.id.btnDecrease)
         val btnNextPage: Button = findViewById(R.id.btnIncrease)
         val tvCurrentPage: TextView = findViewById(R.id.tvNumber)
 
-        var currentPage = 1 // Trang hiển thị đầu tiên bắt đâầu từ 1
-        val itemsPerPage = 6 // Số lượng món đồ hiển thị được trên 1 trang là 6 món
-        val totalPages = if (allData.isNotEmpty()) Math.ceil(allData.size / itemsPerPage.toDouble()).toInt() else 1 // Giúp trang nhận biết được việc chỉ chứa đc 6 món nên khi có món thứ 7 thì sang trang thứ 2
+        var currentPage = 1
+        val itemsPerPage = 6
+        val totalPages = if (allData.isNotEmpty())
+            Math.ceil(allData.size / itemsPerPage.toDouble()).toInt() else 1
 
         fun loadPage(page: Int) {
             tvCurrentPage.text = page.toString()
@@ -503,7 +493,6 @@ class MainActivity : AppCompatActivity() {
         imgbtnback.setOnClickListener { setupMainActivity() }
     }
 
-
     private fun showInventory() {
         setContentView(R.layout.inventory)
         val imgbtnback: ImageButton = findViewById(R.id.imgbtnBack)
@@ -515,12 +504,12 @@ class MainActivity : AppCompatActivity() {
         val btnSortStarDesc: TextView = findViewById(R.id.btnSortStarDesc)
         val btnSortStarAsc: TextView = findViewById(R.id.btnSortStarAsc)
         val layoutFilterSort: LinearLayout = findViewById(R.id.layoutFilterSort)
+        val layoutFilterfollowstar: LinearLayout = findViewById(R.id.layoutFilterfollowstar)
 
         val tvTotalItems: TextView = findViewById(R.id.tvTotalItems)
         val tvEmptyInventory: TextView = findViewById(R.id.tvEmptyInventory)
         val rcvInventory: RecyclerView = findViewById(R.id.rcvInventory)
 
-        // Cột phải (Bảng chi tiết)
         val panelDetail: LinearLayout = findViewById(R.id.panelDetail)
         val btnClosePanel: ImageButton = findViewById(R.id.btnClosePanel)
         val tvSelectedName: TextView = findViewById(R.id.tvSelectedName)
@@ -533,65 +522,159 @@ class MainActivity : AppCompatActivity() {
         val btnSell: Button = findViewById(R.id.btnSell)
         val btnPushToShop: Button = findViewById(R.id.btnPushToShop)
         val edtCustomPrice: EditText = findViewById(R.id.edtCustomPrice)
-        val layoutFilterfollowstar: LinearLayout = findViewById(R.id.layoutFilterfollowstar)
 
         var currentFilterStar = 0
-        var currentSortMode = "STAR_DESC" 
+        var currentSortMode = "STAR_DESC"
         var currentSelectedGroup: ItemsGroup? = null
         var sellQuantity = 1
+
+        // Lấy đồ chưa bán, chưa lên shop từ SQLite
+        fun fetchInventoryFromDB(): List<WishHistory> {
+            val list = mutableListOf<WishHistory>()
+            if (!UserManager.isLoggedIn(this)) return list
+            val userId = UserManager.getCurrentUserId(this)
+            val db = DatabaseHelper(this).readableDatabase
+            val sql = """
+                SELECT History.ID, VatPham.TenVatPham, VatPham.SoSao, History.ThoiGian,
+                       History.customPrice, History.isSold, History.isListedOnShop, History.listedBy
+                FROM History
+                JOIN VatPham ON History.VatPhamID = VatPham.ID
+                WHERE History.UserID = ? AND History.isSold = 0 AND History.isListedOnShop = 0
+                ORDER BY History.ID DESC
+            """
+            val cursor = db.rawQuery(sql, arrayOf(userId.toString()))
+            var stt = 1
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(
+                        WishHistory(
+                            stt = stt++,
+                            name = cursor.getString(1),
+                            rarity = Rarity.entries.first { it.stars == cursor.getInt(2) },
+                            time = cursor.getString(3),
+                            customPrice = cursor.getInt(4),
+                            isSold = cursor.getInt(5) == 1,
+                            isListedOnShop = cursor.getInt(6) == 1,
+                            listedBy = cursor.getString(7) ?: "",
+                            historyId = cursor.getInt(0)
+                        )
+                    )
+                } while (cursor.moveToNext())
+            }
+            cursor.close()
+            return list
+        }
 
         fun updateQuantityUI() {
             val group = currentSelectedGroup ?: return
             tvCurrentQuantity.text = sellQuantity.toString()
-            val singlePrice = PriceManager.getBasePrice(group.sampleItem.rarity.stars)
+            val singlePrice = getBasePrice(group.sampleItem.rarity.stars)
             tvTotalEarn.text = "Thu về: +${singlePrice * sellQuantity} Tiền"
             btnMinus.isEnabled = sellQuantity > 1
             btnPlus.isEnabled = sellQuantity < group.totalCount
         }
 
         fun loadGroupedInventory() {
-            // Lấy toàn bộ items từ SQLite và gom nhóm
-            val inventoryList = mutableListOf<WishHistory>()
-            if (UserManager.isLoggedIn(this)) {
-                val userId = UserManager.getCurrentUserId(this)
-                val db = DatabaseHelper(this).readableDatabase
-                val sql = "SELECT VatPham.TenVatPham, VatPham.SoSao FROM History JOIN VatPham ON History.VatPhamID = VatPham.ID WHERE History.UserID = ?"
-                val cursor = db.rawQuery(sql, arrayOf(userId.toString()))
-                if (cursor.moveToFirst()) {
-                    do {
-                        val name = cursor.getString(0)
-                        val star = cursor.getInt(1)
-                        val rarity = Rarity.entries.first { it.stars == star }
-                        inventoryList.add(WishHistory(0, name, rarity, ""))
-                    } while (cursor.moveToNext())
-                }
-                cursor.close()
-            }
+            val inventoryList = fetchInventoryFromDB()
 
-            val grouped = inventoryList.groupBy { it.name }.map { (_, items) -> ItemsGroup(items.first(), items.size, items) }
-            var processData = grouped.toList()
+            // Ẩn/hiện bộ lọc
+            layoutFilterfollowstar.visibility = if (inventoryList.isEmpty()) View.GONE else View.VISIBLE
+            layoutFilterSort.visibility = if (inventoryList.isEmpty()) View.GONE else View.VISIBLE
 
-            if (currentFilterStar != 0) processData = processData.filter { it.sampleItem.rarity.stars == currentFilterStar }
-            processData = if (currentSortMode == "STAR_ASC") processData.sortedBy { it.sampleItem.rarity.stars } else processData.sortedByDescending { it.sampleItem.rarity.stars }
+            val has5 = inventoryList.any { it.rarity.stars == 5 }
+            val has4 = inventoryList.any { it.rarity.stars == 4 }
+            val has3 = inventoryList.any { it.rarity.stars == 3 }
+            btnFilter5.visibility = if (has5) View.VISIBLE else View.GONE
+            btnFilter4.visibility = if (has4) View.VISIBLE else View.GONE
+            btnFilter3.visibility = if (has3) View.VISIBLE else View.GONE
+
+            // Reset bộ lọc nếu loại sao đó không còn trong túi
+            if (currentFilterStar == 5 && !has5) currentFilterStar = 0
+            if (currentFilterStar == 4 && !has4) currentFilterStar = 0
+            if (currentFilterStar == 3 && !has3) currentFilterStar = 0
+
+            // Gom nhóm → lọc → sắp xếp
+            var grouped = inventoryList
+                .groupBy { it.name }
+                .map { (_, items) -> ItemsGroup(items.first(), items.size, items) }
+
+            if (currentFilterStar != 0)
+                grouped = grouped.filter { it.sampleItem.rarity.stars == currentFilterStar }
+
+            grouped = if (currentSortMode == "STAR_ASC")
+                grouped.sortedBy { it.sampleItem.rarity.stars }
+            else
+                grouped.sortedByDescending { it.sampleItem.rarity.stars }
 
             rcvInventory.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 5)
-            if (processData.isEmpty()) {
+
+            if (grouped.isEmpty()) {
                 tvEmptyInventory.visibility = View.VISIBLE
                 rcvInventory.visibility = View.GONE
                 panelDetail.visibility = View.GONE
             } else {
                 tvEmptyInventory.visibility = View.GONE
                 rcvInventory.visibility = View.VISIBLE
-                rcvInventory.adapter = InventoryAdapter(processData) { clickedGroup ->
-                    currentSelectedGroup = clickedGroup; sellQuantity = 1; panelDetail.visibility = View.VISIBLE
+                panelDetail.visibility = View.GONE
+                currentSelectedGroup = null
+
+                rcvInventory.adapter = InventoryAdapter(grouped) { clickedGroup ->
+                    currentSelectedGroup = clickedGroup
+                    sellQuantity = 1
+                    panelDetail.visibility = View.VISIBLE
                     tvSelectedName.text = clickedGroup.sampleItem.name
                     tvDetailStars.text = "★".repeat(clickedGroup.sampleItem.rarity.stars)
                     tvDetailStars.setTextColor(Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
-                    tvDetailPrice.text = "Giá trị gốc: ${getBasePrice(clickedGroup.sampleItem.rarity.stars)} Tiền"
+                    tvDetailPrice.text = "Giá trị gốc: ${PriceManager.getBasePrice(clickedGroup.sampleItem.rarity.stars)} Tiền"
                     updateQuantityUI()
                 }
             }
             tvTotalItems.text = "Tổng số vật phẩm: ${inventoryList.size}"
+        }
+
+        // Nút bán lấy tiền
+        btnSell.setOnClickListener {
+            val group = currentSelectedGroup ?: return@setOnClickListener
+            val pricePerItem = PriceManager.getBasePrice(group.sampleItem.rarity.stars)
+            val totalEarned = pricePerItem * sellQuantity
+            val itemsToSell = group.rawItems.take(sellQuantity)
+
+            val db = DatabaseHelper(this).writableDatabase
+            for (item in itemsToSell) {
+                val v = ContentValues()
+                v.put("isSold", 1)
+                db.update("History", v, "ID=?", arrayOf(item.historyId.toString()))
+            }
+            UserManager.addWishes(this, totalEarned)
+            Toast.makeText(this, "Đã bán $sellQuantity món, nhận $totalEarned Tiền!", Toast.LENGTH_SHORT).show()
+            panelDetail.visibility = View.GONE
+            loadGroupedInventory()
+        }
+
+        // Nút đưa lên shop
+        btnPushToShop.setOnClickListener {
+            val group = currentSelectedGroup ?: return@setOnClickListener
+            val priceStr = edtCustomPrice.text.toString()
+            if (priceStr.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập giá muốn bán!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val userCustomPrice = priceStr.toInt()
+            val itemsToPush = group.rawItems.take(sellQuantity)
+            val currentUser = UserManager.getUsername(this)
+
+            val db = DatabaseHelper(this).writableDatabase
+            for (item in itemsToPush) {
+                val v = ContentValues()
+                v.put("isListedOnShop", 1)
+                v.put("customPrice", userCustomPrice)
+                v.put("listedBy", currentUser)
+                db.update("History", v, "ID=?", arrayOf(item.historyId.toString()))
+            }
+            Toast.makeText(this, "Đã đưa $sellQuantity món lên Shop giá $userCustomPrice!", Toast.LENGTH_SHORT).show()
+            edtCustomPrice.text.clear()
+            panelDetail.visibility = View.GONE
+            loadGroupedInventory()
         }
 
         btnClosePanel.setOnClickListener { panelDetail.visibility = View.GONE; currentSelectedGroup = null }
@@ -601,16 +684,209 @@ class MainActivity : AppCompatActivity() {
         btnFilter3.setOnClickListener { currentFilterStar = 3; loadGroupedInventory() }
         btnSortStarAsc.setOnClickListener { currentSortMode = "STAR_ASC"; loadGroupedInventory() }
         btnSortStarDesc.setOnClickListener { currentSortMode = "STAR_DESC"; loadGroupedInventory() }
-        btnPlus.setOnClickListener { if (sellQuantity < currentSelectedGroup!!.totalCount) { sellQuantity++; updateQuantityUI() } }
+        btnPlus.setOnClickListener {
+            if (sellQuantity < (currentSelectedGroup?.totalCount ?: 1)) {
+                sellQuantity++; updateQuantityUI()
+            }
+        }
         btnMinus.setOnClickListener { if (sellQuantity > 1) { sellQuantity--; updateQuantityUI() } }
         imgbtnback.setOnClickListener { setupMainActivity() }
+
         loadGroupedInventory()
     }
 
+
     private fun showShop() {
-        // Hiện tại Shop cũng sẽ được cập nhật tương tự bằng cách query từ bảng GiaBanVP trong SQLite
-        Toast.makeText(this, "Tính năng Shop đang được SQLite hóa...", Toast.LENGTH_SHORT).show()
-        setupMainActivity()
+        setContentView(R.layout.shop)
+        val imgbtnback: ImageButton = findViewById(R.id.imgbtnBack)
+
+        val btnFilterAll: TextView = findViewById(R.id.btnShopFilterAll)
+        val btnFilter5: TextView = findViewById(R.id.btnShopFilter5)
+        val btnFilter4: TextView = findViewById(R.id.btnShopFilter4)
+        val btnFilter3: TextView = findViewById(R.id.btnShopFilter3)
+        val btnSortStarDesc: TextView = findViewById(R.id.btnShopSortStarDesc)
+        val btnSortStarAsc: TextView = findViewById(R.id.btnShopSortStarAsc)
+        val btnSortPriceDesc: TextView = findViewById(R.id.btnShopSortPriceDesc)
+        val btnSortPriceAsc: TextView = findViewById(R.id.btnShopSortPriceAsc)
+        val tvShopEmpty: TextView = findViewById(R.id.tvShopEmpty)
+        val rcvShopItems: RecyclerView = findViewById(R.id.rcvShopItems)
+
+        val panelBuyDetail: LinearLayout = findViewById(R.id.panelBuyDetail)
+        val btnCloseShopPanel: ImageButton = findViewById(R.id.btnCloseShopPanel)
+        val tvBuyName: TextView = findViewById(R.id.tvBuyName)
+        val tvBuyStars: TextView = findViewById(R.id.tvBuyStars)
+        val tvUnitPrice: TextView = findViewById(R.id.tvUnitPrice)
+        val btnBuyMinus: Button = findViewById(R.id.btnBuyMinus)
+        val tvBuyQuantity: TextView = findViewById(R.id.tvBuyQuantity)
+        val btnBuyPlus: Button = findViewById(R.id.btnBuyPlus)
+        val tvTotalPrice: TextView = findViewById(R.id.tvTotalPrice)
+        val btnConfirmBuy: Button = findViewById(R.id.btnConfirmBuy)
+        val btnBackInventory: Button = findViewById(R.id.btnBackInventory)
+
+        var currentFilterStar = 0
+        var currentSortMode = "STAR_DESC"
+        var currentSelectedGroup: ItemsGroup? = null
+        var buyQuantity = 1
+
+        findViewById<TextView>(R.id.tvTotalWishes).text =
+            if (UserManager.isLoggedIn(this)) UserManager.getWishes(this).toString() else "0"
+
+        // Lấy toàn bộ đồ đang trên shop từ SQLite
+        fun fetchShopFromDB(): List<WishHistory> {
+            val list = mutableListOf<WishHistory>()
+            val db = DatabaseHelper(this).readableDatabase
+            val sql = """
+                SELECT History.ID, VatPham.TenVatPham, VatPham.SoSao, History.ThoiGian,
+                       History.customPrice, History.listedBy
+                FROM History
+                JOIN VatPham ON History.VatPhamID = VatPham.ID
+                WHERE History.isSold = 0 AND History.isListedOnShop = 1
+                ORDER BY History.customPrice ASC
+            """
+            val cursor = db.rawQuery(sql, null)
+            var stt = 1
+            if (cursor.moveToFirst()) {
+                do {
+                    list.add(
+                        WishHistory(
+                            stt = stt++,
+                            name = cursor.getString(1),
+                            rarity = Rarity.entries.first { it.stars == cursor.getInt(2) },
+                            time = cursor.getString(3),
+                            customPrice = cursor.getInt(4),
+                            isListedOnShop = true,
+                            listedBy = cursor.getString(5) ?: "",
+                            historyId = cursor.getInt(0)
+                        )
+                    )
+                } while (cursor.moveToNext())
+            }
+            cursor.close()
+            return list
+        }
+
+        fun updateBuyUI() {
+            val group = currentSelectedGroup ?: return
+            tvBuyQuantity.text = buyQuantity.toString()
+            tvTotalPrice.text = "Tổng thanh toán: ${group.sampleItem.customPrice * buyQuantity} Tiền"
+            btnBuyMinus.isEnabled = buyQuantity > 1
+            btnBuyPlus.isEnabled = buyQuantity < group.totalCount
+        }
+
+        fun loadShopData() {
+            val shopList = fetchShopFromDB()
+
+            val has5 = shopList.any { it.rarity.stars == 5 }
+            val has4 = shopList.any { it.rarity.stars == 4 }
+            val has3 = shopList.any { it.rarity.stars == 3 }
+            btnFilter5.visibility = if (has5) View.VISIBLE else View.GONE
+            btnFilter4.visibility = if (has4) View.VISIBLE else View.GONE
+            btnFilter3.visibility = if (has3) View.VISIBLE else View.GONE
+
+            if (currentFilterStar == 5 && !has5) currentFilterStar = 0
+            if (currentFilterStar == 4 && !has4) currentFilterStar = 0
+            if (currentFilterStar == 3 && !has3) currentFilterStar = 0
+
+            var grouped = shopList
+                .groupBy { "${it.name}_${it.customPrice}" }
+                .map { (_, items) -> ItemsGroup(items.first(), items.size, items) }
+
+            if (currentFilterStar != 0)
+                grouped = grouped.filter { it.sampleItem.rarity.stars == currentFilterStar }
+
+            grouped = when (currentSortMode) {
+                "STAR_ASC"   -> grouped.sortedBy { it.sampleItem.rarity.stars }
+                "STAR_DESC"  -> grouped.sortedByDescending { it.sampleItem.rarity.stars }
+                "PRICE_ASC"  -> grouped.sortedBy { it.sampleItem.customPrice }
+                "PRICE_DESC" -> grouped.sortedByDescending { it.sampleItem.customPrice }
+                else -> grouped
+            }
+
+            if (grouped.isEmpty()) {
+                tvShopEmpty.visibility = View.VISIBLE
+                rcvShopItems.visibility = View.GONE
+                panelBuyDetail.visibility = View.GONE
+            } else {
+                tvShopEmpty.visibility = View.GONE
+                rcvShopItems.visibility = View.VISIBLE
+                panelBuyDetail.visibility = View.GONE
+                currentSelectedGroup = null
+
+                rcvShopItems.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 5)
+                rcvShopItems.adapter = InventoryAdapter(grouped) { clickedGroup ->
+                    currentSelectedGroup = clickedGroup
+                    buyQuantity = 1
+                    panelBuyDetail.visibility = View.VISIBLE
+                    tvBuyName.text = clickedGroup.sampleItem.name
+                    tvBuyStars.text = "★".repeat(clickedGroup.sampleItem.rarity.stars)
+                    tvBuyStars.setTextColor(Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
+                    tvUnitPrice.text = "Đơn giá: ${clickedGroup.sampleItem.customPrice} Tiền"
+                    updateBuyUI()
+                }
+            }
+        }
+
+        // Nút mua
+        btnConfirmBuy.setOnClickListener {
+            val group = currentSelectedGroup ?: return@setOnClickListener
+            if (!UserManager.isLoggedIn(this)) {
+                Toast.makeText(this, "Vui lòng đăng nhập để mua!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val totalCost = group.sampleItem.customPrice * buyQuantity
+            if (UserManager.getWishes(this) < totalCost) {
+                Toast.makeText(this, "Không đủ tiền! Cần $totalCost Tiền.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val db = DatabaseHelper(this).writableDatabase
+            for (item in group.rawItems.take(buyQuantity)) {
+                val v = ContentValues()
+                v.put("isSold", 1)
+                v.put("isListedOnShop", 0)
+                db.update("History", v, "ID=?", arrayOf(item.historyId.toString()))
+            }
+            UserManager.removeWishes(this, totalCost)
+            Toast.makeText(this, "Giao dịch thành công $buyQuantity ${group.sampleItem.name}!", Toast.LENGTH_SHORT).show()
+            loadShopData()
+        }
+
+        // Nút rút về túi
+        btnBackInventory.setOnClickListener {
+            val group = currentSelectedGroup ?: return@setOnClickListener
+            val currentUser = UserManager.getUsername(this)
+            val isOwner = group.rawItems.take(buyQuantity).all { it.listedBy == currentUser }
+            if (!isOwner) {
+                Toast.makeText(this, "Bạn không phải người bán món đồ này!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val db = DatabaseHelper(this).writableDatabase
+            for (item in group.rawItems.take(buyQuantity)) {
+                val v = ContentValues()
+                v.put("isListedOnShop", 0)
+                db.update("History", v, "ID=?", arrayOf(item.historyId.toString()))
+            }
+            Toast.makeText(this, "Đã rút $buyQuantity ${group.sampleItem.name} về túi!", Toast.LENGTH_SHORT).show()
+            loadShopData()
+        }
+
+        btnCloseShopPanel.setOnClickListener { panelBuyDetail.visibility = View.GONE; currentSelectedGroup = null }
+        btnFilterAll.setOnClickListener { currentFilterStar = 0; loadShopData() }
+        btnFilter5.setOnClickListener { currentFilterStar = 5; loadShopData() }
+        btnFilter4.setOnClickListener { currentFilterStar = 4; loadShopData() }
+        btnFilter3.setOnClickListener { currentFilterStar = 3; loadShopData() }
+        btnSortStarAsc.setOnClickListener { currentSortMode = "STAR_ASC"; loadShopData() }
+        btnSortStarDesc.setOnClickListener { currentSortMode = "STAR_DESC"; loadShopData() }
+        btnSortPriceAsc.setOnClickListener { currentSortMode = "PRICE_ASC"; loadShopData() }
+        btnSortPriceDesc.setOnClickListener { currentSortMode = "PRICE_DESC"; loadShopData() }
+        btnBuyPlus.setOnClickListener {
+            if (buyQuantity < (currentSelectedGroup?.totalCount ?: 1)) {
+                buyQuantity++; updateBuyUI()
+            }
+        }
+        btnBuyMinus.setOnClickListener { if (buyQuantity > 1) { buyQuantity--; updateBuyUI() } }
+        imgbtnback.setOnClickListener { setupMainActivity() }
+
+        loadShopData()
     }
 }
 
