@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnWish1: Button
     private lateinit var btnWish10: Button
 
-    // 3. Database & Logic
+    // 3. Database & Logic & Danh sách nhân vật , vật phẩm
     private val pool3 = listOf("Kiếm Cùi", "Sách Cũ", "Gậy Gỗ", "Cung Tập Sự") //khai báo danh sách vật phấm sẽ rơi ra trong 3*
     private val pool4 = listOf("Amber", "Kaeya", "Lisa", "Barbara", "Bennett") //khai báo danh sách vật phấm sẽ rơi ra trong 4*
     private val pool5 = listOf("Diluc", "Jean", "Keqing", "Mona", "Qiqi") //khai báo danh sách vật phấm sẽ rơi ra trong 5*
@@ -334,21 +334,40 @@ class MainActivity : AppCompatActivity() {
         btnBackTop.setOnClickListener { showChooseBanner() }
     }
 
+    //Hàm tính softPity 5s
+    private fun caculatorPity5(currentPity: Int): Double {
+        return when {
+            currentPity >= 90 -> 1.0 //nếu pity5s =90 chắc chắn ra 5s
+            currentPity >= 74 ->   {    //nếu pity5s >=74 thì tăng tỉ lệ ra 5s lên 6% mỗi lượt
+                0.006 + (currentPity-73)*0.06
+            }
+            else -> 0.006
+        }
+    }
+    //Hàm tính softPity 4s
+    private fun caculatorPity4(currentPity: Int): Double {
+        return when {
+            currentPity >= 10 -> 1.0 //nếu pity4s =10 chắc chắn ra 4s
+            currentPity >= 9 ->  0.561  //nếu pity4s >=9 thì tăng tỉ lệ ra 4s thành 56.1%
+            else -> 0.057
+        }
+    }
     // Hàm quay 1 lần (có tính toán bảo hiểm)
     private fun pullOne(): GachaItem {
 
         pity5++
         pity4++
-        val rate = Random.nextDouble(0.0, 100.0)
-
-
-        // Logic 5 sao (0.001% hoặc pity 90)
-        if (pity5 >= 90 || rate <= 0.001) {
-            pity5 = 0; pity4 = 0
+        val rate = Random.nextDouble(0.0, 1.0)
+        val rate4 = caculatorPity4(pity4)
+        val rate5 = caculatorPity5(pity5)
+        // Logic 5 sao (0.6% hoặc pity 90)
+        if(rate <= rate5)
+        {
+            pity5 = 0
             return GachaItem(pool5.random(), Rarity.FIVE_STAR)
         }
-        // Logic 4 sao (5.7% hoặc pity 10)
-        if (pity4 >= 10 || rate <= 5.7) {
+        else if(rate <= rate4 + rate5)  // Logic 4 sao (5.7% hoặc pity 10)
+        {
             pity4 = 0
             return GachaItem(pool4.random(), Rarity.FOUR_STAR)
         }
@@ -475,7 +494,7 @@ class MainActivity : AppCompatActivity() {
         val tvCurrentPage: TextView = findViewById(R.id.tvNumber)
 
         var currentPage = 1
-        val itemsPerPage = 6
+        val itemsPerPage = 5
         val totalPages = if (allData.isNotEmpty())
             Math.ceil(allData.size / itemsPerPage.toDouble()).toInt() else 1
 

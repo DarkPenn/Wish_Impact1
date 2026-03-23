@@ -46,29 +46,16 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
             )
         """.trimIndent()
 
-        // 4. Tạo bảng GiaBanVP (Chợ đồ cũ/Shop)
-        val createShopTable = """
-            CREATE TABLE GiaBanVP (
-                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                UserID INTEGER,
-                VatPhamID INTEGER,
-                GiaOffer INTEGER,
-                SoLuong INTEGER,
-                FOREIGN KEY(UserID) REFERENCES User(ID),
-                FOREIGN KEY(VatPhamID) REFERENCES VatPham(ID)
-            )
-        """.trimIndent()
-
         // Thực thi lệnh tạo bảng
         db.execSQL(createUserTable)
         db.execSQL(createVatPhamTable)
         db.execSQL(createHistoryTable)
-        db.execSQL(createShopTable)
 
         // Tự động nạp danh sách vật phẩm vào bảng VatPham khi app chạy lần đầu
         insertDefaultVatPham(db)
     }
 
+    //Nơi lưu trữ danh sách nhân vật, vật phẩm
     private fun insertDefaultVatPham(db: SQLiteDatabase) {
         val items = listOf(
             Pair("Diluc", 5), Pair("Jean", 5), Pair("Keqing", 5), Pair("Mona", 5), Pair("Qiqi", 5),
