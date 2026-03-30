@@ -39,7 +39,6 @@ class InventoryAdapter(
         } else {
             holder.tvItemQuantity.visibility = View.INVISIBLE
         }
-
         holder.layoutBgRarity.setBackgroundColor(Color.parseColor(item.rarity.colorHex))
 
         holder.itemView.setOnClickListener {
