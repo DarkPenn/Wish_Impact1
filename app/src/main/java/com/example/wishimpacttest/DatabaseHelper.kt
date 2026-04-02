@@ -110,6 +110,14 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
         v.put("SoXu", soXuMoi)
         db.update("User", v, "ID=?", arrayOf(userId.toString()))
     }
+    fun getWishesById(userId: Int): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT SoXu FROM User WHERE ID=?", arrayOf(userId.toString()))
+        var xu = 0
+        if (cursor.moveToFirst()) xu = cursor.getInt(0)
+        cursor.close()
+        return xu
+    }
 
     //          !!!Cách Xóa (Delete)!!!
     // Xóa một món đồ khỏi shop

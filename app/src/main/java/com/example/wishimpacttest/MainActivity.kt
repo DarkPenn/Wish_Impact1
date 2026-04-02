@@ -896,6 +896,20 @@ class MainActivity : AppCompatActivity() {
                     db.insert("History", null, newItem)
                 }
                 cursor.close()
+                // Cộng tiền cho người bán
+                val sellerUsername = item.listedBy
+                if (sellerUsername.isNotEmpty()) {
+                    val sellerCursor = db.rawQuery(
+                        "SELECT ID FROM User WHERE TenDangNhap = ?",
+                        arrayOf(sellerUsername)
+                    )
+                    if (sellerCursor.moveToFirst()) {
+                        val sellerId = sellerCursor.getInt(0)
+                        UserManager.addWishesById(this, sellerId, item.customPrice)
+                    }
+                    sellerCursor.close()
+                }
+
             }
 
             UserManager.removeWishes(this, totalCost)
