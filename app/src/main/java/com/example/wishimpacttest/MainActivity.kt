@@ -749,6 +749,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvTotalWishes).text =
             if (UserManager.isLoggedIn(this)) UserManager.getWishes(this).toString() else "0"
 
+
         // Lấy toàn bộ đồ đang trên shop từ SQLite
         fun fetchShopFromDB(): List<WishHistory> {
             val list = mutableListOf<WishHistory>()
@@ -792,7 +793,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun loadShopData() {
+            findViewById<TextView>(R.id.tvTotalWishes).text =
+                if (UserManager.isLoggedIn(this)) UserManager.getWishes(this).toString() else "0"
             val shopList = fetchShopFromDB()
+
+
 
             val has5 = shopList.any { it.rarity.stars == 5 }
             val has4 = shopList.any { it.rarity.stars == 4 }
