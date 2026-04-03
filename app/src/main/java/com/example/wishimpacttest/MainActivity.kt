@@ -651,7 +651,7 @@ class MainActivity : AppCompatActivity() {
                     tvSelectedName.text = clickedGroup.sampleItem.name
                     tvDetailStars.text = "★".repeat(clickedGroup.sampleItem.rarity.stars)
                     tvDetailStars.setTextColor(Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
-                    tvDetailPrice.text = "Giá trị gốc: ${PriceManager.getBasePrice(clickedGroup.sampleItem.rarity.stars)} Tiền"
+                    tvDetailPrice.text = "Giá trị gốc: ${getBasePrice(clickedGroup.sampleItem.rarity.stars)} Tiền"
                     updateQuantityUI()
                 }
             }
@@ -661,7 +661,7 @@ class MainActivity : AppCompatActivity() {
         // Nút bán lấy tiền
         btnSell.setOnClickListener {
             val group = currentSelectedGroup ?: return@setOnClickListener
-            val pricePerItem = PriceManager.getBasePrice(group.sampleItem.rarity.stars)
+            val pricePerItem = getBasePrice(group.sampleItem.rarity.stars)
             val totalEarned = pricePerItem * sellQuantity
             val itemsToSell = group.rawItems.take(sellQuantity)
 
@@ -721,7 +721,6 @@ class MainActivity : AppCompatActivity() {
         loadGroupedInventory()
     }
 
-
     private fun showShop() {
         setContentView(R.layout.shop)
         val imgbtnback: ImageButton = findViewById(R.id.imgbtnBack)
@@ -756,6 +755,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.tvTotalWishes).text =
             if (UserManager.isLoggedIn(this)) UserManager.getWishes(this).toString() else "0"
+
 
         // Lấy toàn bộ đồ đang trên shop từ SQLite
         fun fetchShopFromDB(): List<WishHistory> {
@@ -800,7 +800,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun loadShopData() {
+            findViewById<TextView>(R.id.tvTotalWishes).text =
+                if (UserManager.isLoggedIn(this)) UserManager.getWishes(this).toString() else "0"
             val shopList = fetchShopFromDB()
+
+
 
             val has5 = shopList.any { it.rarity.stars == 5 }
             val has4 = shopList.any { it.rarity.stars == 4 }
@@ -847,6 +851,14 @@ class MainActivity : AppCompatActivity() {
                     tvBuyStars.text = "★".repeat(clickedGroup.sampleItem.rarity.stars)
                     tvBuyStars.setTextColor(Color.parseColor(clickedGroup.sampleItem.rarity.colorHex))
                     tvUnitPrice.text = "Đơn giá: ${clickedGroup.sampleItem.customPrice} Tiền"
+
+                    //  Kiểm tra người dùng hiện tại có phải người đăng bán không
+                    val currentUser = UserManager.getUsername(this)
+                    val isOwner = clickedGroup.sampleItem.listedBy == currentUser
+
+                    btnConfirmBuy.visibility  = if (isOwner) View.GONE else View.VISIBLE
+                    btnBackInventory.visibility = if (isOwner) View.VISIBLE else View.GONE
+
                     updateBuyUI()
                 }
             }
@@ -864,18 +876,58 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Không đủ tiền! Cần $totalCost Tiền.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
             val db = DatabaseHelper(this).writableDatabase
+            val buyerId = UserManager.getCurrentUserId(this)
+            val currentTime = java.text.SimpleDateFormat(
+                "dd/MM/yyyy HH:mm", java.util.Locale.getDefault()
+            ).format(java.util.Date())
+
             for (item in group.rawItems.take(buyQuantity)) {
+                //  Đánh dấu đồ của người bán là đã bán
                 val v = ContentValues()
                 v.put("isSold", 1)
                 v.put("isListedOnShop", 0)
                 db.update("History", v, "ID=?", arrayOf(item.historyId.toString()))
+
+                //  Tạo bản ghi mới trong History cho người mua
+                val cursor = db.rawQuery(
+                    "SELECT VatPhamID FROM History WHERE ID=?",
+                    arrayOf(item.historyId.toString())
+                )
+                if (cursor.moveToFirst()) {
+                    val vatPhamId = cursor.getInt(0)
+                    val newItem = ContentValues()
+                    newItem.put("UserID", buyerId)
+                    newItem.put("VatPhamID", vatPhamId)
+                    newItem.put("ThoiGian", currentTime)
+                    newItem.put("isSold", 0)
+                    newItem.put("isListedOnShop", 0)
+                    newItem.put("customPrice", 0)
+                    newItem.put("listedBy", "")
+                    db.insert("History", null, newItem)
+                }
+                cursor.close()
+                // Cộng tiền cho người bán
+                val sellerUsername = item.listedBy
+                if (sellerUsername.isNotEmpty()) {
+                    val sellerCursor = db.rawQuery(
+                        "SELECT ID FROM User WHERE TenDangNhap = ?",
+                        arrayOf(sellerUsername)
+                    )
+                    if (sellerCursor.moveToFirst()) {
+                        val sellerId = sellerCursor.getInt(0)
+                        UserManager.addWishesById(this, sellerId, item.customPrice)
+                    }
+                    sellerCursor.close()
+                }
+
             }
+
             UserManager.removeWishes(this, totalCost)
             Toast.makeText(this, "Giao dịch thành công $buyQuantity ${group.sampleItem.name}!", Toast.LENGTH_SHORT).show()
             loadShopData()
         }
-
         // Nút rút về túi
         btnBackInventory.setOnClickListener {
             val group = currentSelectedGroup ?: return@setOnClickListener

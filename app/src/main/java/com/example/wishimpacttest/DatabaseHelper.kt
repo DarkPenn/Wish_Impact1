@@ -84,6 +84,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
         db.execSQL("DROP TABLE IF EXISTS User")
         db.execSQL("DROP TABLE IF EXISTS VatPham")
         db.execSQL("DROP TABLE IF EXISTS History")
+        db.execSQL("DROP TABLE IF EXISTS GiaBanVP")
         onCreate(db)
     }
 
@@ -118,5 +119,20 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, "WishImpact.d
         val v = ContentValues()
         v.put("SoXu", soXuMoi)
         db.update("User", v, "ID=?", arrayOf(userId.toString()))
+    }
+    fun getWishesById(userId: Int): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT SoXu FROM User WHERE ID=?", arrayOf(userId.toString()))
+        var xu = 0
+        if (cursor.moveToFirst()) xu = cursor.getInt(0)
+        cursor.close()
+        return xu
+    }
+
+    //          !!!Cách Xóa (Delete)!!!
+    // Xóa một món đồ khỏi shop
+    fun deleteFromShop(shopId: Int) {
+        val db = writableDatabase
+        db.delete("GiaBanVP", "ID=?", arrayOf(shopId.toString()))
     }
 }

@@ -122,6 +122,11 @@ object UserManager {
         val db = DatabaseHelper(context)
         db.updateSoXu(getCurrentUserId(context), current + amount)
     }
+    fun addWishesById(context: Context, userId: Int, amount: Int) {
+        val db = DatabaseHelper(context)
+        val current = db.getWishesById(userId)
+        db.updateSoXu(userId, current + amount)
+    }
 
     // Hàm giảm tiền tệ (khi quay)
     fun removeWishes(context: Context, amount: Int): Boolean {
